@@ -9152,6 +9152,18 @@ public class MessagesController extends BaseController implements NotificationCe
         }, ConnectionsManager.RequestFlagInvokeAfter);
     }
 
+    public void toggleNoForwards(long chatId, boolean enabled) {
+        TLRPC.TL_messages_toggleNoForwards req = new TLRPC.TL_messages_toggleNoForwards();
+        req.peer = getInputPeer(getChat(chatId));
+        req.enabled = enabled;
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (error != null) {
+                return;
+            }
+            processUpdates((TLRPC.Updates) response, false);
+        });
+    }
+
     public void sendBotStart(final TLRPC.User user, String botHash) {
         if (user == null) {
             return;
