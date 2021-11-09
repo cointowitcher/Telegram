@@ -1831,4 +1831,8 @@ public class ActionBarMenuItem extends FrameLayout {
             return color != null ? color : Theme.getColor(key);
         }
     }
+
+    public void setIconAlpha(float alpha) {
+        iconView.setAlpha(0.5f);
+    }
 }
