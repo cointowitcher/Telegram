@@ -4411,6 +4411,8 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         }
     }
 
+    protected void showHintRestricted(View view) { }
+
     private boolean onItemLongClick(MessageObject item, View view, int a) {
         if (isActionModeShowed || profileActivity.getParentActivity() == null || item == null) {
             return false;
@@ -4425,7 +4427,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             if (noforwards) {
                 forwardItem.setAlpha(0.5f);
                 forwardItem.setOnClickListener(v -> {
-                    Log.d("sergey", "testt");
+                    showHintRestricted(v);
                 });
             } else {
                 forwardItem.setAlpha(1f);

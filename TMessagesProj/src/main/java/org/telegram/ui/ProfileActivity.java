@@ -148,6 +148,7 @@ import org.telegram.ui.Components.CombinedDrawable;
 import org.telegram.ui.Components.CrossfadeDrawable;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.FragmentContextView;
+import org.telegram.ui.Components.HintView;
 import org.telegram.ui.Components.IdenticonDrawable;
 import org.telegram.ui.Components.ImageUpdater;
 import org.telegram.ui.Components.LayoutHelper;
@@ -204,6 +205,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
     private StickerEmptyView emptyView;
     private boolean sharedMediaLayoutAttached;
     private SharedMediaLayout.SharedMediaPreloader sharedMediaPreloader;
+    private HintView hintRestricted;
 
     private RLottieDrawable cameraDrawable;
 
@@ -1506,6 +1508,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         searchMode = false;
         hasOwnBackground = true;
         extraHeight = AndroidUtilities.dp(88f);
+        ProfileActivity pa = this;
         actionBar.setActionBarMenuOnItemClick(new ActionBar.ActionBarMenuOnItemClick() {
             @Override
             public void onItemClick(final int id) {
@@ -1917,6 +1920,21 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             @Override
             protected boolean onMemberClick(TLRPC.ChatParticipant participant, boolean isLong) {
                 return ProfileActivity.this.onMemberClick(participant, isLong);
+            }
+
+            @Override
+            protected void showHintRestricted(View view) {
+                ActionBarMenuItem actionBarMenuItem = (ActionBarMenuItem) view;
+                FrameLayout frameLayout = (FrameLayout) pa.fragmentView;
+                if (pa.hintRestricted == null) {
+                    pa.hintRestricted = new HintView(getParentActivity(), 9, false);
+                    pa.hintRestricted.setVisibility(View.GONE);
+                    frameLayout.addView(hintRestricted, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP, 10, 0, 10, 0));
+                }
+                pa.hintRestricted.setBottomOffset(-10);
+                pa.hintRestricted.setText(LocaleController.getString("ForwardsChannelRestricted2", R.string.ForwardsChannelRestricted2));
+                pa.hintRestricted.showForView(actionBarMenuItem.getIconView(), true);
+                Log.d("sergey", "showHint");
             }
         };
         sharedMediaLayout.setLayoutParams(new RecyclerView.LayoutParams(RecyclerView.LayoutParams.MATCH_PARENT, RecyclerView.LayoutParams.MATCH_PARENT));

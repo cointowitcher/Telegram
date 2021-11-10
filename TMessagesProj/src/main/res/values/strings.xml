@@ -4814,4 +4814,5 @@
     <string name="SavingContentDetailsText">Participants won’t be able to forward messages from this channel or save media files.</string>
     <string name="ForwardsGroupRestricted">Forwards from this group\nare restricted.</string>
     <string name="ForwardsChannelRestricted">Forwards from this channel\nare restricted.</string>
+    <string name="ForwardsChannelRestricted2">Forwards from this channel are restricted</string>
 </resources>
