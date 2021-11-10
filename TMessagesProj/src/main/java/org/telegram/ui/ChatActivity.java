@@ -20251,8 +20251,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 });
                 scrimPopupContainerLayout.addView(messageSeenLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 60));
             }
-            scrimPopupContainerLayout.addView(popupLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, showMessageSeen ? -8 : 0, 0, currentChat.noforwards ? -8 : 0));
-            if (currentChat.noforwards) {
+            scrimPopupContainerLayout.addView(popupLayout, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, 0, 0, showMessageSeen ? -8 : 0, 0, currentChat != null && currentChat.noforwards ? -8 : 0));
+            if (currentChat != null && contentView != null && currentChat.noforwards) {
                 ForwardRestrictedInfo forwardRestrictedInfo = new ForwardRestrictedInfo(getParentActivity(), themeDelegate);
                 String forwardsText = ChatObject.isChannel(currentChat) ? LocaleController.getString("ForwardsChannelRestricted", R.string.ForwardsChannelRestricted) : LocaleController.getString("ForwardsGroupRestricted", R.string.ForwardsGroupRestricted);
                 forwardRestrictedInfo.setTextViewText(forwardsText);
