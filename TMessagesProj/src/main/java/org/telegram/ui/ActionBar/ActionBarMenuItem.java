@@ -164,6 +164,8 @@ public class ActionBarMenuItem extends FrameLayout {
     private ArrayList<FiltersView.MediaFilterData> currentSearchFilters = new ArrayList<>();
     private int selectedFilterIndex = -1;
     private int notificationIndex = -1;
+    private int backgroundColor;
+    private boolean text;
 
     private float transitionOffset;
     private View showSubMenuFrom;
@@ -184,6 +186,8 @@ public class ActionBarMenuItem extends FrameLayout {
     public ActionBarMenuItem(Context context, ActionBarMenu menu, int backgroundColor, int iconColor, boolean text, Theme.ResourcesProvider resourcesProvider) {
         super(context);
         this.resourcesProvider = resourcesProvider;
+        this.backgroundColor = backgroundColor;
+        this.text = text;
         if (backgroundColor != 0) {
             setBackgroundDrawable(Theme.createSelectorDrawable(backgroundColor, text ? 5 : 1));
         }
@@ -208,6 +212,14 @@ public class ActionBarMenuItem extends FrameLayout {
             if (iconColor != 0) {
                 iconView.setColorFilter(new PorterDuffColorFilter(iconColor, PorterDuff.Mode.MULTIPLY));
             }
+        }
+    }
+
+    public void toggleBackgroundDrawable(boolean enabled) {
+        if (enabled) {
+            setBackgroundDrawable(Theme.createSelectorDrawable(backgroundColor, text ? 5 : 1));
+        } else {
+            setBackgroundDrawable(null);
         }
     }
 

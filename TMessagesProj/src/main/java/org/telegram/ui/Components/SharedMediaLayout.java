@@ -1061,6 +1061,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     private int startedTrackingPointerId;
     private boolean startedTracking;
     private boolean maybeStartTracking;
+    private boolean noforwards;
     private int startedTrackingX;
     private int startedTrackingY;
     private VelocityTracker velocityTracker;
@@ -1069,10 +1070,10 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
     final Delegate delegate;
 
-    public SharedMediaLayout(Context context, long did, SharedMediaPreloader preloader, int commonGroupsCount, ArrayList<Integer> sortedUsers, TLRPC.ChatFull chatInfo, boolean membersFirst, BaseFragment parent, Delegate delegate, int viewType) {
+    public SharedMediaLayout(Context context, long did, SharedMediaPreloader preloader, int commonGroupsCount, ArrayList<Integer> sortedUsers, TLRPC.ChatFull chatInfo, boolean membersFirst, BaseFragment parent, Delegate delegate, int viewType, boolean noforwards) {
         super(context);
         this.viewType = viewType;
-
+        this.noforwards = noforwards;
         globalGradientView = new FlickerLoadingView(context);
         globalGradientView.setIsSingleCell(true);
 
@@ -4420,6 +4421,18 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             cantDeleteMessagesCount++;
         }
         deleteItem.setVisibility(cantDeleteMessagesCount == 0 ? View.VISIBLE : View.GONE);
+        if (forwardItem != null) {
+            if (noforwards) {
+                forwardItem.setAlpha(0.5f);
+                forwardItem.setOnClickListener(v -> {
+                    Log.d("sergey", "testt");
+                });
+            } else {
+                forwardItem.setAlpha(1f);
+                forwardItem.setOnClickListener(v -> onActionBarItemClick(forward));
+            }
+            forwardItem.toggleBackgroundDrawable(!noforwards);
+        }
         if (gotoItem != null) {
             gotoItem.setVisibility(View.VISIBLE);
         }

@@ -198,7 +198,7 @@ public class MediaActivity extends BaseFragment implements SharedMediaLayout.Sha
             public void updateSelectedMediaTabText() {
                 updateMediaCount();
             }
-        }, SharedMediaLayout.VIEW_TYPE_MEDIA_ACTIVITY) {
+        }, SharedMediaLayout.VIEW_TYPE_MEDIA_ACTIVITY, false) {
             @Override
             protected void onSelectedTabChanged() {
                 updateMediaCount();
