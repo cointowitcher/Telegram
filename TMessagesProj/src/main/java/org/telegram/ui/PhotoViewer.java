@@ -9813,7 +9813,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     needSearchImageInArr = false;
                 } else if (currentAnimation != null) {
                     needSearchImageInArr = false;
-                    if (messageObject.canForwardMessage()) {
+                    if (messageObject.canForwardMessage() && !noforwards) {
                         setItemVisible(sendItem, true, false);
                     }
                 } else if (!messageObject.scheduled && !(messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaInvoice) && !(messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage) && (messageObject.messageOwner.action == null || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionEmpty)) {
@@ -9823,8 +9823,10 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         menuItem.showSubItem(gallery_menu_showinchat);
                         menuItem.showSubItem(gallery_menu_showall);
                     }
-                    setItemVisible(sendItem, true, false);
-                } else if (isEmbedVideo && messageObject.eventId == 0) {
+                    if (!noforwards) {
+                        setItemVisible(sendItem, true, false);
+                    }
+                } else if (isEmbedVideo && messageObject.eventId == 0 && !noforwards) {
                     setItemVisible(sendItem, true, false);
                 }
                 setImageIndex(0);
@@ -9873,7 +9875,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 opennedFromMedia = true;
                 startOffset = object.starOffset;
                 menuItem.showSubItem(gallery_menu_showinchat);
-                if (openingObject.canForwardMessage()) {
+                if (openingObject.canForwardMessage() && !noforwards) {
                     setItemVisible(sendItem, true, false);
                 }
                 if (openingObject.canPreviewDocument()) {
@@ -10005,10 +10007,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
         }
         if (noforwards) {
-            setItemVisible(sendItem, false, false);
             shareButton.setVisibility(View.GONE);
         } else {
-            setItemVisible(sendItem, true, false);
             shareButton.setVisibility(View.VISIBLE);
         }
         checkFullscreenButton();
@@ -10072,8 +10072,10 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 nameTextView.setText("");
                 dateTextView.setText("");
             } else {
-                if (newMessageObject.isNewGif()) {
+                if (newMessageObject.isNewGif() && !noforwards) {
                     menuItem.showSubItem(gallery_menu_savegif);
+                } else {
+                    menuItem.hideSubItem(gallery_menu_savegif);
                 }
                 if (newMessageObject.canDeleteMessage(parentChatActivity != null && parentChatActivity.isInScheduleMode(), null) && slideshowMessageId == 0) {
                     menuItem.showSubItem(gallery_menu_delete);
@@ -10239,7 +10241,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 } else if (newMessageObject.getDocument() != null) {
                     actionBar.setTitle(LocaleController.getString("AttachDocument", R.string.AttachDocument));
                 }
-                if (DialogObject.isEncryptedDialog(currentDialogId) && !isEmbedVideo) {
+                if (DialogObject.isEncryptedDialog(currentDialogId) && !isEmbedVideo || noforwards) {
                     setItemVisible(sendItem, false, false);
                 }
                 if (isEmbedVideo || newMessageObject.messageOwner.ttl != 0 && newMessageObject.messageOwner.ttl < 60 * 60) {
@@ -10543,7 +10545,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             if (currentAnimation != null) {
                 menuItem.setVisibility(View.VISIBLE);
                 menuItem.hideSubItem(gallery_menu_save);
-                menuItem.showSubItem(gallery_menu_savegif);
+                if (!noforwards) {
+                    menuItem.showSubItem(gallery_menu_savegif);
+                } else {
+                    menuItem.hideSubItem(gallery_menu_savegif);
+                }
                 actionBar.setTitle(LocaleController.getString("AttachGif", R.string.AttachGif));
             } else {
                 menuItem.setVisibility(View.VISIBLE);

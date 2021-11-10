@@ -12393,7 +12393,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         forwardItem.setEnabled(cantForwardMessagesCount == 0);
                         forwardItem.setAlpha(cantForwardMessagesCount == 0 ? 1.0f : 0.5f);
                     }
-                    if (currentChat.noforwards) {
+                    if (currentChat != null && forwardButton != null && currentChat.noforwards) {
                         forwardButton.setAlpha(0.5f);
                         forwardButton.setBackgroundDrawable(null);
                         forwardButton.setOnClickListener(v -> {
