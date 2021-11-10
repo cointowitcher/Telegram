@@ -2542,10 +2542,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         actionMode.getItem(copy).setVisibility(selectedMessagesCanCopyIds[0].size() + selectedMessagesCanCopyIds[1].size() != 0 ? View.VISIBLE : View.GONE);
         actionMode.getItem(star).setVisibility(selectedMessagesCanStarIds[0].size() + selectedMessagesCanStarIds[1].size() != 0 ? View.VISIBLE : View.GONE);
         actionMode.getItem(delete).setVisibility(cantDeleteMessagesCount == 0 ? View.VISIBLE : View.GONE);
-        if (currentChat.noforwards) {
-            actionMode.getItem(forward).setIconAlpha(0.5f);
-            actionMode.getItem(forward).setBackgroundDrawable(null);
-            actionMode.getItem(forward).setOnClickListener(v -> {
+        if (currentChat != null && currentChat.noforwards) {
+            ActionBarMenuItem forwardItem = actionMode.getItem(forward);
+            forwardItem.setIconAlpha(0.5f);
+            forwardItem.setBackgroundDrawable(null);
+            forwardItem.setOnClickListener(v -> {
                 Log.d("wdw", "fewf");
             });
         }
@@ -23389,6 +23390,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     messageCell.isPinned = chatMode == 0 && (pinnedMessageObjects.containsKey(message.getId()) || groupedMessages != null && !groupedMessages.messages.isEmpty() && pinnedMessageObjects.containsKey(groupedMessages.messages.get(0).getId()));
                     messageCell.linkedChatId = chatMode != MODE_SCHEDULED && chatInfo != null ? chatInfo.linked_chat_id : 0;
                     messageCell.isRepliesChat = UserObject.isReplyUser(currentUser);
+                    messageCell.noforwards = currentChat != null && currentChat.noforwards;
                     messageCell.isPinnedChat = chatMode == MODE_PINNED;
                     boolean pinnedBottom = false;
                     boolean pinnedBottomByGroup = false;
