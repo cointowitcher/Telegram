@@ -9592,7 +9592,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     private void onPhotoShow(final MessageObject messageObject, final TLRPC.FileLocation fileLocation, ImageLocation imageLocation, ImageLocation videoLocation, final ArrayList<MessageObject> messages, final ArrayList<SecureDocument> documents, final List<Object> photos, int index, final PlaceProviderObject object) {
         classGuid = ConnectionsManager.generateClassGuid();
         currentMessageObject = null;
-        noforwards = messageObject != null && parentChatActivity != null && parentChatActivity.getMessagesController().getChat(messageObject.getChatId()).noforwards;
+        TLRPC.Chat chat2 = null;
+        if (messageObject != null && parentChatActivity != null) {
+            chat2 = parentChatActivity.getMessagesController().getChat(messageObject.getChatId());
+        }
+        noforwards = chat2 != null && chat2.noforwards;
         currentFileLocation = null;
         currentFileLocationVideo = null;
         currentSecureDocument = null;
@@ -10001,8 +10005,10 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
         }
         if (noforwards) {
+            setItemVisible(sendItem, false, false);
             shareButton.setVisibility(View.GONE);
         } else {
+            setItemVisible(sendItem, true, false);
             shareButton.setVisibility(View.VISIBLE);
         }
         checkFullscreenButton();
