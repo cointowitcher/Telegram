@@ -10011,6 +10011,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         } else {
             shareButton.setVisibility(View.VISIBLE);
         }
+        if (menuItem.anyVisible()) {
+            menuItem.setVisibility(View.VISIBLE);
+        } else {
+            menuItem.setVisibility(View.GONE);
+        }
         checkFullscreenButton();
     }
 
