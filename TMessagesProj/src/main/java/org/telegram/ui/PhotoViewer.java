@@ -10310,7 +10310,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             } else {
                 actionBar.setTitle(LocaleController.formatString("Of", R.string.Of, switchingToIndex + 1, imagesArrLocations.size()));
             }
-            menuItem.showSubItem(gallery_menu_save);
+            if (!noforwards) {
+                menuItem.showSubItem(gallery_menu_save);
+            } else {
+                menuItem.hideSubItem(gallery_menu_save);
+            }
             allowShare = true;
             bottomButtonsLayout.setVisibility(!videoPlayerControlVisible ? View.VISIBLE : View.GONE);
             if (bottomButtonsLayout.getVisibility() == View.VISIBLE) {
@@ -10562,7 +10566,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 } else {
                     actionBar.setTitle(LocaleController.formatString("Of", R.string.Of, switchingToIndex + 1, size));
                 }
-                menuItem.showSubItem(gallery_menu_save);
+                if (!noforwards) {
+                    menuItem.showSubItem(gallery_menu_save);
+                } else {
+                    menuItem.hideSubItem(gallery_menu_save);
+                }
                 menuItem.hideSubItem(gallery_menu_savegif);
             }
             groupedPhotosListView.fillList();
@@ -10663,7 +10671,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             isVideo = newMessageObject.isVideo();
             if (sharedMediaType == MediaDataController.MEDIA_FILE) {
                 if (canZoom = newMessageObject.canPreviewDocument()) {
-                    menuItem.showSubItem(gallery_menu_save);
+                    if (!noforwards) {
+                        menuItem.showSubItem(gallery_menu_save);
+                    } else {
+                        menuItem.hideSubItem(gallery_menu_save);
+                    }
                     setDoubleTapEnabled(true);
                 } else {
                     menuItem.hideSubItem(gallery_menu_save);

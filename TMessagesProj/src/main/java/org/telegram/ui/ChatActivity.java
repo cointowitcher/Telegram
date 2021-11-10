@@ -2544,11 +2544,31 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         actionMode.getItem(delete).setVisibility(cantDeleteMessagesCount == 0 ? View.VISIBLE : View.GONE);
         if (currentChat != null && currentChat.noforwards) {
             ActionBarMenuItem forwardItem = actionMode.getItem(forward);
-            forwardItem.setIconAlpha(0.5f);
-            forwardItem.setBackgroundDrawable(null);
-            forwardItem.setOnClickListener(v -> {
-                Log.d("wdw", "fewf");
-            });
+            if (forwardItem != null) {
+                forwardItem.setIconAlpha(0.5f);
+                forwardItem.setBackgroundDrawable(null);
+                forwardItem.setOnClickListener(v -> {
+                    Log.d("sergey", "forwardItemClicked");
+                });
+            }
+
+            ActionBarMenuItem downloadItem = actionMode.getItem(save_to);
+            if (downloadItem != null) {
+                downloadItem.setIconAlpha(0.5f);
+                downloadItem.setBackgroundDrawable(null);
+                downloadItem.setOnClickListener(v -> {
+                    Log.d("sergey", "downloaditem clicked");
+                });
+            }
+
+            ActionBarMenuItem copyItem = actionMode.getItem(copy);
+            if (copyItem != null) {
+                copyItem.setIconAlpha(0.5f);
+                copyItem.setBackgroundDrawable(null);
+                copyItem.setOnClickListener(v -> {
+                    Log.d("sergey", "downloaditem clicked");
+                });
+            }
         }
         checkActionBarMenu(false);
 
