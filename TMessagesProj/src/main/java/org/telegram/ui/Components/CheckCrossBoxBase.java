@@ -22,7 +22,7 @@ import android.view.View;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.ui.ActionBar.Theme;
 
-public class CheckBoxBase {
+public class CheckCrossBoxBase {
 
     private View parentView;
     private Rect bounds = new Rect();
@@ -49,6 +49,7 @@ public class CheckBoxBase {
     private ObjectAnimator checkAnimator;
 
     private boolean isChecked;
+    private boolean cross;
 
     private String checkColorKey = Theme.key_checkboxCheck;
     private String backgroundColorKey = Theme.key_chat_serviceBackground;
@@ -72,8 +73,13 @@ public class CheckBoxBase {
         void setProgress(float progress);
     }
 
-    public CheckBoxBase(View parent, int sz, Theme.ResourcesProvider resourcesProvider) {
+    public CheckCrossBoxBase(View parent, int sz, Theme.ResourcesProvider resourcesProvider) {
+        this(parent, sz, resourcesProvider, false);
+    }
+
+    public CheckCrossBoxBase(View parent, int sz, Theme.ResourcesProvider resourcesProvider, boolean cross) {
         this.resourcesProvider = resourcesProvider;
+        this.cross = cross;
         parentView = parent;
         size = sz;
         if (paint == null) {
@@ -413,22 +419,43 @@ public class CheckBoxBase {
                     canvas.restore();
                 } else {
                     path.reset();
-                    float scale = 1f;
-                    if (backgroundType == -1) {
-                        scale = 1.4f;
-                    } else if (backgroundType == 5) {
-                        scale = 0.8f;
+                    if (cross) {
+                        float scale = 1f;
+                        if (backgroundType == -1) {
+                            scale = 1.4f;
+                        } else if (backgroundType == 5) {
+                            scale = 0.8f;
+                        }
+                        float side = AndroidUtilities.dp(5 * scale * checkProgress);
+                        int x = cx;
+                        int y = cy;
+                        path.moveTo(x - side, y - side);
+                        path.lineTo(x, y);
+                        path.moveTo(x - side, y + side);
+                        path.lineTo(x, y);
+                        path.moveTo(x + side, y - side);
+                        path.lineTo(x, y);
+                        path.moveTo(x + side, y + side);
+                        path.lineTo(x, y);
+                        canvas.drawPath(path, checkPaint);
+                    } else {
+                        float scale = 1f;
+                        if (backgroundType == -1) {
+                            scale = 1.4f;
+                        } else if (backgroundType == 5) {
+                            scale = 0.8f;
+                        }
+                        float checkSide = AndroidUtilities.dp(9 * scale) * checkProgress;
+                        float smallCheckSide = AndroidUtilities.dp(4 * scale) * checkProgress;
+                        int x = cx - AndroidUtilities.dp(1.5f);
+                        int y = cy + AndroidUtilities.dp(4);
+                        float side = (float) Math.sqrt(smallCheckSide * smallCheckSide / 2.0f);
+                        path.moveTo(x - side, y - side);
+                        path.lineTo(x, y);
+                        side = (float) Math.sqrt(checkSide * checkSide / 2.0f);
+                        path.lineTo(x + side, y - side);
+                        canvas.drawPath(path, checkPaint);
                     }
-                    float checkSide = AndroidUtilities.dp(9 * scale) * checkProgress;
-                    float smallCheckSide = AndroidUtilities.dp(4 * scale) * checkProgress;
-                    int x = cx - AndroidUtilities.dp(1.5f);
-                    int y = cy + AndroidUtilities.dp(4);
-                    float side = (float) Math.sqrt(smallCheckSide * smallCheckSide / 2.0f);
-                    path.moveTo(x - side, y - side);
-                    path.lineTo(x, y);
-                    side = (float) Math.sqrt(checkSide * checkSide / 2.0f);
-                    path.lineTo(x + side, y - side);
-                    canvas.drawPath(path, checkPaint);
                 }
             }
         }

@@ -10,7 +10,7 @@ import org.telegram.ui.ActionBar.Theme;
 
 public class CheckBox2 extends View {
 
-    private CheckBoxBase checkBoxBase;
+    private CheckCrossBoxBase checkBoxBase;
 
     public CheckBox2(Context context, int sz) {
         this(context, sz, null);
@@ -18,10 +18,10 @@ public class CheckBox2 extends View {
 
     public CheckBox2(Context context, int sz, Theme.ResourcesProvider resourcesProvider) {
         super(context);
-        checkBoxBase = new CheckBoxBase(this, sz, resourcesProvider);
+        checkBoxBase = new CheckCrossBoxBase(this, sz, resourcesProvider);
     }
 
-    public void setProgressDelegate(CheckBoxBase.ProgressDelegate delegate) {
+    public void setProgressDelegate(CheckCrossBoxBase.ProgressDelegate delegate) {
         checkBoxBase.setProgressDelegate(delegate);
     }
 

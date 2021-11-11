@@ -68,8 +68,6 @@ import android.widget.Toast;
 
 import androidx.core.graphics.ColorUtils;
 
-import com.google.android.exoplayer2.util.Log;
-
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ChatObject;
@@ -108,7 +106,7 @@ import org.telegram.ui.Components.AnimationProperties;
 import org.telegram.ui.Components.AudioVisualizerDrawable;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackgroundGradientDrawable;
-import org.telegram.ui.Components.CheckBoxBase;
+import org.telegram.ui.Components.CheckCrossBoxBase;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EmptyStubSpan;
 import org.telegram.ui.Components.FloatSeekBarAccessibilityDelegate;
@@ -372,8 +370,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     private boolean drawMediaCheckBox;
     private boolean drawSelectionBackground;
-    private CheckBoxBase mediaCheckBox;
-    private CheckBoxBase checkBox;
+    private CheckCrossBoxBase mediaCheckBox;
+    private CheckCrossBoxBase checkBox;
     private boolean checkBoxVisible;
     private boolean checkBoxAnimationInProgress;
     private float checkBoxAnimationProgress;
@@ -655,7 +653,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private ImageReceiver[] pollAvatarImages;
     private AvatarDrawable[] pollAvatarDrawables;
     private boolean[] pollAvatarImagesVisible;
-    private CheckBoxBase[] pollCheckBox;
+    private CheckCrossBoxBase[] pollCheckBox;
 
     private InfiniteProgress commentProgress;
     private float commentProgressAlpha;
@@ -916,9 +914,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             pollAvatarDrawables[a] = new AvatarDrawable();
             pollAvatarDrawables[a].setTextSize(AndroidUtilities.dp(6));
         }
-        pollCheckBox = new CheckBoxBase[10];
+        pollCheckBox = new CheckCrossBoxBase[10];
         for (int a = 0; a < pollCheckBox.length; a++) {
-            pollCheckBox[a] = new CheckBoxBase(this, 20, resourcesProvider);
+            pollCheckBox[a] = new CheckCrossBoxBase(this, 20, resourcesProvider);
             pollCheckBox[a].setDrawUnchecked(false);
             pollCheckBox[a].setBackgroundType(9);
         }
@@ -11454,13 +11452,13 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     public void setCheckBoxVisible(boolean visible, boolean animated) {
         if (visible && checkBox == null) {
-            checkBox = new CheckBoxBase(this, 21, resourcesProvider);
+            checkBox = new CheckCrossBoxBase(this, 21, resourcesProvider);
             if (attachedToWindow) {
                 checkBox.onAttachedToWindow();
             }
         }
         if (visible && mediaCheckBox == null && ((currentMessagesGroup != null && currentMessagesGroup.messages.size() > 1) || (groupedMessagesToSet != null && groupedMessagesToSet.messages.size() > 1))) {
-            mediaCheckBox = new CheckBoxBase(this, 21, resourcesProvider);
+            mediaCheckBox = new CheckCrossBoxBase(this, 21, resourcesProvider);
             mediaCheckBox.setUseDefaultCheck(true);
             if (attachedToWindow) {
                 mediaCheckBox.onAttachedToWindow();

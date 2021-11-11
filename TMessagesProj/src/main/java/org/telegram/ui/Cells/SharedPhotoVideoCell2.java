@@ -2,8 +2,6 @@ package org.telegram.ui.Cells;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
-import android.animation.AnimatorSet;
-import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -15,13 +13,10 @@ import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
 import android.util.SparseArray;
-import android.view.Gravity;
 import android.view.View;
 
 import androidx.core.content.ContextCompat;
 import androidx.core.graphics.ColorUtils;
-
-import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DownloadController;
@@ -33,10 +28,8 @@ import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
-import org.telegram.ui.Components.CheckBox2;
-import org.telegram.ui.Components.CheckBoxBase;
+import org.telegram.ui.Components.CheckCrossBoxBase;
 import org.telegram.ui.Components.FlickerLoadingView;
-import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.PhotoViewer;
 
 public class SharedPhotoVideoCell2 extends View {
@@ -53,7 +46,7 @@ public class SharedPhotoVideoCell2 extends View {
     boolean showVideoLayout;
     StaticLayout videoInfoLayot;
     String videoText;
-    CheckBoxBase checkBoxBase;
+    CheckCrossBoxBase checkBoxBase;
     SharedResources sharedResources;
     private boolean attached;
     float crossfadeProgress;
@@ -383,7 +376,7 @@ public class SharedPhotoVideoCell2 extends View {
             return;
         }
         if (checkBoxBase == null) {
-            checkBoxBase = new CheckBoxBase(this,21, null);
+            checkBoxBase = new CheckCrossBoxBase(this,21, null);
             checkBoxBase.setColor(null, Theme.key_sharedMedia_photoPlaceholder, Theme.key_checkboxCheck);
             checkBoxBase.setDrawUnchecked(false);
             checkBoxBase.setBackgroundType(1);
