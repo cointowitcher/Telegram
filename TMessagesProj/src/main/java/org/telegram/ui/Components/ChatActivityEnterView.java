@@ -769,6 +769,17 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         }
     };
 
+    private AnimatorSet addSendAsButtonAnimation;
+
+    private Runnable runAddSendAsButtonAnimation = new Runnable() {
+        @Override
+        public void run() {
+            if (addSendAsButtonAnimation != null && !addSendAsButtonAnimation.isRunning()) {
+                addSendAsButtonAnimation.start();
+            }
+        }
+    };
+
     public class RecordCircle extends View {
 
         private float scale;
@@ -1729,9 +1740,6 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 
         sendMessageAsButton = new SendMessageAsButton(context, resourcesProvider);
         sendMessageAsButton.setVisible(false);
-        AndroidUtilities.runOnUIThread(() -> {
-            addSendMessageAsButton();
-        }, 500);
         frameLayout.addView(sendMessageAsButton, LayoutHelper.createFrame(48, 48, Gravity.BOTTOM | Gravity.LEFT, 3, 0, 0, 0));
 
         for (int a = 0; a < 2; a++) {
@@ -8411,6 +8419,22 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             return;
         }
         sendMessageAsButton.setVisible(true);
+        requestLayout();
+//        addSendAsButtonAnimation = new AnimatorSet();
+//        addSendAsButtonAnimation.playTogether(ObjectAnimator.ofFloat(emojiButton[0], View.TRANSLATION_X, sendMessageAsButton.getPossibleWidth(), 0));
+//        addSendAsButtonAnimation.playTogether(ObjectAnimator.ofFloat(emojiButton[1], View.TRANSLATION_X, sendMessageAsButton.getPossibleWidth(), 0));
+//        addSendAsButtonAnimation.playTogether(ObjectAnimator.ofFloat(messageEditText, View.TRANSLATION_X, sendMessageAsButton.getPossibleWidth(), 0));
+//        addSendAsButtonAnimation.setInterpolator(AdjustPanLayoutHelper.keyboardInterpolator);
+//        addSendAsButtonAnimation.setDuration(AdjustPanLayoutHelper.keyboardDuration);
+//        addSendAsButtonAnimation.addListener(new AnimatorListenerAdapter() {
+//            @Override
+//            public void onAnimationEnd(Animator animation) {
+//                addSendAsButtonAnimation = null;
+//                NotificationCenter.getInstance(currentAccount).onAnimationFinish(notificationsIndex);
+//            }
+//        });
+//        AndroidUtilities.runOnUIThread(runAddSendAsButtonAnimation, 50);
+//        notificationsIndex = NotificationCenter.getInstance(currentAccount).setAnimationInProgress(notificationsIndex, null);
     }
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
@@ -8421,10 +8445,21 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             }
             ((MarginLayoutParams) messageEditText.getLayoutParams()).leftMargin = AndroidUtilities.dp(57) + botCommandsMenuButton.getMeasuredWidth() + sendMessageAsButton.getPossibleWidth();
         } else {
-            for (int i = 0; i < emojiButton.length; i++) {
-                ((MarginLayoutParams) emojiButton[i].getLayoutParams()).leftMargin = AndroidUtilities.dp(3) + sendMessageAsButton.getPossibleWidth();
+            if (sendMessageAsButton.getVisible()) {
+                for (int i = 0; i < emojiButton.length; i++) {
+                    MarginLayoutParams layoutParams = (MarginLayoutParams) emojiButton[i].getLayoutParams();
+                    layoutParams.leftMargin = sendMessageAsButton.getPossibleWidth();
+                    emojiButton[i].setLayoutParams(layoutParams);
+                }
+                MarginLayoutParams layoutParams = (MarginLayoutParams) messageEditText.getLayoutParams();
+                layoutParams.leftMargin = AndroidUtilities.dp(50 - 3) + sendMessageAsButton.getPossibleWidth();
+                messageEditText.setLayoutParams(layoutParams);
+            } else {
+                for (int i = 0; i < emojiButton.length; i++) {
+                    ((MarginLayoutParams) emojiButton[i].getLayoutParams()).leftMargin = AndroidUtilities.dp(3) + sendMessageAsButton.getPossibleWidth();
+                }
+                ((MarginLayoutParams) messageEditText.getLayoutParams()).leftMargin = AndroidUtilities.dp(50) + sendMessageAsButton.getPossibleWidth();
             }
-            ((MarginLayoutParams) messageEditText.getLayoutParams()).leftMargin = AndroidUtilities.dp(50) + sendMessageAsButton.getPossibleWidth();
         }
         if (botCommandsMenuContainer != null) {
             int padding;
