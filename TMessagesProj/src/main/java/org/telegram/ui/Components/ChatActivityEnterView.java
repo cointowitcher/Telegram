@@ -325,6 +325,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     private ActionBarPopupWindow.ActionBarPopupWindowLayout sendPopupLayout;
     private ImageView cancelBotButton;
     private ImageView[] emojiButton = new ImageView[2];
+    private SendMessageAsButton sendMessageAsButton;
     @SuppressWarnings("FieldCanBeLocal")
     private ImageView emojiButton1;
     @SuppressWarnings("FieldCanBeLocal")
@@ -1725,6 +1726,13 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         };
         frameLayout.setClipChildren(false);
         textFieldContainer.addView(frameLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM, 0, 0, 48, 0));
+
+        sendMessageAsButton = new SendMessageAsButton(context, resourcesProvider);
+        sendMessageAsButton.setVisible(false);
+        AndroidUtilities.runOnUIThread(() -> {
+            addSendMessageAsButton();
+        }, 500);
+        frameLayout.addView(sendMessageAsButton, LayoutHelper.createFrame(48, 48, Gravity.BOTTOM | Gravity.LEFT, 3, 0, 0, 0));
 
         for (int a = 0; a < 2; a++) {
             emojiButton[a] = new ImageView(context) {
@@ -8398,19 +8406,25 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     int botCommandLastPosition = -1;
     int botCommandLastTop;
 
+    void addSendMessageAsButton() {
+        if (sendMessageAsButton.getVisible()) {
+            return;
+        }
+        sendMessageAsButton.setVisible(true);
+    }
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         if (botCommandsMenuButton != null && botCommandsMenuButton.getTag() != null) {
             botCommandsMenuButton.measure(widthMeasureSpec, heightMeasureSpec);
             for (int i = 0; i < emojiButton.length; i++) {
-                ((MarginLayoutParams) emojiButton[i].getLayoutParams()).leftMargin = AndroidUtilities.dp(10) + botCommandsMenuButton.getMeasuredWidth();
+                ((MarginLayoutParams) emojiButton[i].getLayoutParams()).leftMargin = AndroidUtilities.dp(10) + botCommandsMenuButton.getMeasuredWidth() + sendMessageAsButton.getPossibleWidth();
             }
-            ((MarginLayoutParams) messageEditText.getLayoutParams()).leftMargin = AndroidUtilities.dp(57) + botCommandsMenuButton.getMeasuredWidth();
+            ((MarginLayoutParams) messageEditText.getLayoutParams()).leftMargin = AndroidUtilities.dp(57) + botCommandsMenuButton.getMeasuredWidth() + sendMessageAsButton.getPossibleWidth();
         } else {
             for (int i = 0; i < emojiButton.length; i++) {
-                ((MarginLayoutParams) emojiButton[i].getLayoutParams()).leftMargin = AndroidUtilities.dp(3);
+                ((MarginLayoutParams) emojiButton[i].getLayoutParams()).leftMargin = AndroidUtilities.dp(3) + sendMessageAsButton.getPossibleWidth();
             }
-            ((MarginLayoutParams) messageEditText.getLayoutParams()).leftMargin = AndroidUtilities.dp(50);
+            ((MarginLayoutParams) messageEditText.getLayoutParams()).leftMargin = AndroidUtilities.dp(50) + sendMessageAsButton.getPossibleWidth();
         }
         if (botCommandsMenuContainer != null) {
             int padding;

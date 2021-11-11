@@ -51,9 +51,9 @@ public class CheckCrossBoxBase {
     private boolean isChecked;
     private boolean cross;
 
-    private String checkColorKey = Theme.key_checkboxCheck;
-    private String backgroundColorKey = Theme.key_chat_serviceBackground;
-    private String background2ColorKey = Theme.key_chat_serviceBackground;
+    public String checkColorKey = Theme.key_checkboxCheck;
+    public String backgroundColorKey = Theme.key_chat_serviceBackground;
+    public String background2ColorKey = Theme.key_chat_serviceBackground;
 
     private boolean useDefaultCheck;
 
@@ -93,7 +93,7 @@ public class CheckCrossBoxBase {
         checkPaint.setStrokeCap(Paint.Cap.ROUND);
         checkPaint.setStyle(Paint.Style.STROKE);
         checkPaint.setStrokeJoin(Paint.Join.ROUND);
-        checkPaint.setStrokeWidth(AndroidUtilities.dp(1.9f));
+        checkPaint.setStrokeWidth(AndroidUtilities.dp(cross ? 2.3f : 1.9f));
 
         backgroundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         backgroundPaint.setStyle(Paint.Style.STROKE);
@@ -286,7 +286,11 @@ public class CheckCrossBoxBase {
                     backgroundPaint.setColor(getThemedColor(checkColorKey));
                 }
             } else {
-                backgroundPaint.setColor(AndroidUtilities.getOffsetColor(0x00ffffff, getThemedColor(background2ColorKey != null ? background2ColorKey : checkColorKey), progress, backgroundAlpha));
+                if (cross) {
+                    backgroundPaint.setColor(0);
+                } else {
+                    backgroundPaint.setColor(AndroidUtilities.getOffsetColor(0x00ffffff, getThemedColor(background2ColorKey != null ? background2ColorKey : checkColorKey), progress, backgroundAlpha));
+                }
             }
         } else {
             if (drawUnchecked) {
@@ -426,7 +430,7 @@ public class CheckCrossBoxBase {
                         } else if (backgroundType == 5) {
                             scale = 0.8f;
                         }
-                        float side = AndroidUtilities.dp(5 * scale * checkProgress);
+                        float side = AndroidUtilities.dp(4.6f * scale * checkProgress);
                         int x = cx;
                         int y = cy;
                         path.moveTo(x - side, y - side);
