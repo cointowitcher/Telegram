@@ -1351,6 +1351,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         int migrated_to = arguments.getInt("migrated_to", 0);
         scrollToTopOnResume = arguments.getBoolean("scrollToTopOnResume", false);
         needRemovePreviousSameChatActivity = arguments.getBoolean("need_remove_previous_same_chat_activity", true);
+
         if (chatId != 0) {
             currentChat = getMessagesController().getChat(chatId);
             if (currentChat == null) {
@@ -1445,6 +1446,22 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             return false;
         }
 
+        if (currentChat != null) {
+            boolean isSupergroup = (currentChat.megagroup && currentChat.username == null || currentChat.has_geo);
+            boolean isDiscussionGroup = currentChat.megagroup && currentChat.has_link;
+            getNotificationCenter().addObserver(this, NotificationCenter.chatPeersLoaded);
+            if (isSupergroup || isDiscussionGroup) {
+                Log.d("sergey", "satisfied");
+                getMessagesController().doSomethingCool(chatId, (sendAsPeers, chatFull) -> {
+                    if (sendAsPeers != null && chatFull != null) {
+                        ChatActivity t = (ChatActivity) this;
+                    }
+                    AndroidUtilities.runOnUIThread(() -> {
+                        chatActivityEnterView.addSendMessageAsButton();
+                    });
+                });
+            }
+        }
         themeDelegate = new ThemeDelegate();
         if (themeDelegate.isThemeChangeAvailable()) {
             NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.needSetDayNightTheme);
@@ -1820,6 +1837,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         getNotificationCenter().removeObserver(this, NotificationCenter.diceStickersDidLoad);
         getNotificationCenter().removeObserver(this, NotificationCenter.dialogDeleted);
         getNotificationCenter().removeObserver(this, NotificationCenter.didLoadSponsoredMessages);
+        getNotificationCenter().removeObserver(this, NotificationCenter.chatPeersLoaded);
         if (currentEncryptedChat != null) {
             getNotificationCenter().removeObserver(this, NotificationCenter.didVerifyMessagesStickers);
         }
@@ -15770,6 +15788,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     themeDelegate.setCurrentTheme(themeDelegate.chatTheme, true, theme.isDark());
                 }
             }
+        } else if (id == NotificationCenter.chatPeersLoaded) {
+            TLRPC.TL_channels_sendAsPeers sendAsPeers = (TLRPC.TL_channels_sendAsPeers) args[0];
+            TLRPC.ChatFull chatFull = (TLRPC.ChatFull) args[1];
+
         }
     }
 

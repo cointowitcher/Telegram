@@ -8413,12 +8413,19 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 
     int botCommandLastPosition = -1;
     int botCommandLastTop;
+    boolean sendMessageAsButtonChecked = false;
 
-    void addSendMessageAsButton() {
+    public void addSendMessageAsButton() {
         if (sendMessageAsButton.getVisible()) {
             return;
         }
         sendMessageAsButton.setVisible(true);
+        sendMessageAsButtonChecked = true;
+        sendMessageAsButton.setChecked(sendMessageAsButtonChecked, false);
+        sendMessageAsButton.setOnClickListener(v -> {
+            sendMessageAsButtonChecked = !sendMessageAsButtonChecked;
+            sendMessageAsButton.setChecked(sendMessageAsButtonChecked, true);
+        });
         requestLayout();
 //        addSendAsButtonAnimation = new AnimatorSet();
 //        addSendAsButtonAnimation.playTogether(ObjectAnimator.ofFloat(emojiButton[0], View.TRANSLATION_X, sendMessageAsButton.getPossibleWidth(), 0));

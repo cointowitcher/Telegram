@@ -22,10 +22,6 @@ public class SendMessageAsButton extends FrameLayout {
         checkBox2.setDrawUnchecked(false);
         checkBox2.setDrawBackgroundAsArc(3);
         addView(checkBox2);
-        setOnClickListener(v -> {
-            checked = !checked;
-            this.checkBox2.setChecked(checked, true);
-        });
         checkBox2.checkBoxBase.backgroundColorKey = Theme.key_voipgroup_overlayBlue1;
         checkBox2.checkBoxBase.background2ColorKey = null;
     }
@@ -35,6 +31,10 @@ public class SendMessageAsButton extends FrameLayout {
         if (visible) {
 
         }
+    }
+
+    public void setChecked(boolean enabled, boolean animated) {
+        this.checkBox2.setChecked(enabled, animated);
     }
 
     @Override

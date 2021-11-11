@@ -25,6 +25,7 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.util.SparseBooleanArray;
 import android.util.SparseIntArray;
+import android.view.View;
 
 import androidx.collection.LongSparseArray;
 import androidx.core.app.NotificationManagerCompat;
@@ -3319,6 +3320,44 @@ public class MessagesController extends BaseController implements NotificationCe
         });
     }
 
+    public interface GetFullChat {
+        void getFullChat(TLRPC.ChatFull chatFull);
+    }
+
+    public void getFullChat(GetFullChat callback, long chatId) {
+        if (loadingFullChats.contains(chatId)) {
+            return;
+        }
+        if (fullChats.containsKey(chatId)) {
+            callback.getFullChat(fullChats.get(chatId));
+            return;
+        }
+        loadingFullChats.add(chatId);
+        TLObject request;
+        long dialogId = -chatId;
+        TLRPC.Chat chat = getChat(chatId);
+        if (ChatObject.isChannel(chat)) {
+            TLRPC.TL_channels_getFullChannel req = new TLRPC.TL_channels_getFullChannel();
+            req.channel = getInputChannel(chat);
+            request = req;
+            loadChannelAdmins(chatId, false);
+        } else {
+            TLRPC.TL_messages_getFullChat req = new TLRPC.TL_messages_getFullChat();
+            req.chat_id = chatId;
+            request = req;
+            if (dialogs_read_inbox_max.get(dialogId) == null || dialogs_read_outbox_max.get(dialogId) == null) {
+                reloadDialogsReadValue(null, dialogId);
+            }
+        }
+        getConnectionsManager().sendRequest(request, (response, error) -> {
+            loadingFullChats.remove(chatId);
+            if (error == null) {
+                TLRPC.TL_messages_chatFull res = (TLRPC.TL_messages_chatFull) response;
+                callback.getFullChat(res.full_chat);
+            }
+        });
+    }
+
     public void loadFullChat(long chatId, int classGuid, boolean force) {
         boolean loaded = loadedFullChats.contains(chatId);
         if (loadingFullChats.contains(chatId) || !force && loaded) {
@@ -4839,6 +4878,29 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public void deleteDialog(final long did, int onlyHistory, boolean revoke) {
         deleteDialog(did, 1, onlyHistory, 0, revoke, null, 0);
+    }
+
+    public interface GetPeers {
+        void didGetPeers(TLRPC.TL_channels_sendAsPeers sendAsPeers, TLRPC.ChatFull chatFull);
+    }
+
+    public void doSomethingCool(long chatId, GetPeers callback) {
+        getFullChat(chatFull -> {
+            TLRPC.TL_channels_getSendAs req = new TLRPC.TL_channels_getSendAs();
+            req.peer = getInputPeer(getChat(chatId));
+            if ((chatFull.flags & 8) == 0) {
+                callback.didGetPeers(null, null);
+                return;
+            }
+            getConnectionsManager().sendRequest(req, (response, error) -> {
+                MessagesController t = this;
+                if (error == null) {
+                    TLRPC.TL_channels_sendAsPeers sendAsPeers = (TLRPC.TL_channels_sendAsPeers) response;
+                    callback.didGetPeers(sendAsPeers, chatFull);
+                    Log.d("sergey", "tpr");
+                }
+            });
+        }, chatId);
     }
 
     public void setDialogHistoryTTL(long did, int ttl) {
