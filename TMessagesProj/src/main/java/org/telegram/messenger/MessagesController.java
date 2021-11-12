@@ -3325,14 +3325,14 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public void getFullChat(GetFullChat callback, long chatId) {
-        if (loadingFullChats.contains(chatId)) {
-            return;
-        }
         if (fullChats.containsKey(chatId)) {
             callback.getFullChat(fullChats.get(chatId));
             return;
         }
-        loadingFullChats.add(chatId);
+        boolean loadingBefore = loadingFullChats.contains(chatId);
+        if (!loadingBefore) {
+            loadingFullChats.add(chatId);
+        }
         TLObject request;
         long dialogId = -chatId;
         TLRPC.Chat chat = getChat(chatId);

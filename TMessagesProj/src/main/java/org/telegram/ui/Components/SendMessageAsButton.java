@@ -7,23 +7,41 @@ import android.widget.FrameLayout;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.LocaleController;
+import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 
 public class SendMessageAsButton extends FrameLayout {
     private CheckBox2 checkBox2;
+    private BackupImageView avatarImageView;
+    private AvatarDrawable avatarDrawable = new AvatarDrawable();
+    private Object currentObject;
+
     private boolean visible = false;
     private boolean checked = false;
 
     public SendMessageAsButton(Context context, Theme.ResourcesProvider resourcesProvider) {
         super(context);
-        checkBox2 = new CheckBox2(context, AndroidUtilities.dp(11), resourcesProvider, true);
-        checkBox2.setDrawUnchecked(true);
+        avatarImageView = new BackupImageView(context);
+        avatarImageView.setRoundRadius(AndroidUtilities.dp(24));
+        addView(avatarImageView, LayoutHelper.createFrame(AndroidUtilities.dp(11), AndroidUtilities.dp(11), Gravity.CENTER, 0, 0, 0, 0));
+
+        checkBox2 = new CheckBox2(context, AndroidUtilities.dp(11.7f), resourcesProvider, true);
         checkBox2.setColor(null, Theme.key_windowBackgroundWhite, Theme.key_checkboxCheck);
         checkBox2.setDrawUnchecked(false);
         checkBox2.setDrawBackgroundAsArc(3);
         addView(checkBox2);
         checkBox2.checkBoxBase.backgroundColorKey = Theme.key_voipgroup_overlayBlue1;
         checkBox2.checkBoxBase.background2ColorKey = null;
+    }
+
+    public void setObject(Object object) {
+        currentObject = object;
+        if (object instanceof TLRPC.TL_channel) {
+            TLRPC.TL_channel channel = (TLRPC.TL_channel) object;
+            avatarDrawable.setInfo(channel);
+            avatarImageView.setForUserOrChat(channel, avatarDrawable);
+        }
+//        update(0);
     }
 
     public void setVisible(boolean visible) {

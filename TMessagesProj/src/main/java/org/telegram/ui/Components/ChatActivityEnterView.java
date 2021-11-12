@@ -8413,19 +8413,23 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 
     int botCommandLastPosition = -1;
     int botCommandLastTop;
-    boolean sendMessageAsButtonChecked = false;
 
-    public void addSendMessageAsButton() {
+    public void toggleSendMessageAsButton(boolean checked) {
+        sendMessageAsButton.setChecked(checked, true);
+    }
+
+    public void setSendMessageAsButtonChat(Object chat) {
+        sendMessageAsButton.setObject(chat);
+    }
+
+    public void addSendMessageAsButton(Object chat, OnClickListener callback) {
         if (sendMessageAsButton.getVisible()) {
             return;
         }
         sendMessageAsButton.setVisible(true);
-        sendMessageAsButtonChecked = true;
-        sendMessageAsButton.setChecked(sendMessageAsButtonChecked, false);
-        sendMessageAsButton.setOnClickListener(v -> {
-            sendMessageAsButtonChecked = !sendMessageAsButtonChecked;
-            sendMessageAsButton.setChecked(sendMessageAsButtonChecked, true);
-        });
+        sendMessageAsButton.setObject(chat);
+        sendMessageAsButton.setChecked(false, false);
+        sendMessageAsButton.setOnClickListener(callback);
         requestLayout();
 //        addSendAsButtonAnimation = new AnimatorSet();
 //        addSendAsButtonAnimation.playTogether(ObjectAnimator.ofFloat(emojiButton[0], View.TRANSLATION_X, sendMessageAsButton.getPossibleWidth(), 0));
@@ -8436,6 +8440,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 //        addSendAsButtonAnimation.addListener(new AnimatorListenerAdapter() {
 //            @Override
 //            public void onAnimationEnd(Animator animation) {
+//                requestLayout();
 //                addSendAsButtonAnimation = null;
 //                NotificationCenter.getInstance(currentAccount).onAnimationFinish(notificationsIndex);
 //            }

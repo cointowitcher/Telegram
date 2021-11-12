@@ -82,6 +82,7 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
 import android.widget.Space;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -410,6 +411,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private boolean showPinBulletin;
     private int pinBullerinTag;
     private boolean openKeyboardOnAttachMenuClose;
+    private boolean isSelectingSendAsChat;
 
     private MessageObject hintMessageObject;
     private int hintMessageType;
@@ -1455,10 +1457,12 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 getMessagesController().doSomethingCool(chatId, (sendAsPeers, chatFull) -> {
                     if (sendAsPeers != null && chatFull != null) {
                         ChatActivity t = (ChatActivity) this;
+                        AndroidUtilities.runOnUIThread(() -> {
+                            chatActivityEnterView.addSendMessageAsButton(getMessagesController().getChat(sendAsPeers.peers.get(0).channel_id), v -> {
+                                switchSelectingSendAsChat();
+                            });
+                        });
                     }
-                    AndroidUtilities.runOnUIThread(() -> {
-                        chatActivityEnterView.addSendMessageAsButton();
-                    });
                 });
             }
         }
@@ -1707,6 +1711,61 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }, timeout * 1000L);
         }
         return true;
+    }
+    PopupWindow selectingSendAsPopup;
+
+    private void showSelectingSendAsPopup() {
+        FrameLayout frameLayout = new FrameLayout(contentView.getContext());
+        PopupWindow popupWindow = new PopupWindow(frameLayout, contentView.getWidth(), contentView.getHeight());
+
+        View bgView = new View(contentView.getContext());
+        bgView.setBackgroundColor(0x00000000);
+        frameLayout.addView(bgView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        bgView.setOnClickListener(v -> {
+            closeSendAsChat();
+        });
+
+        View dim = new View(bgView.getContext());
+        //dim.setBackgroundColor(0x3300F0F0);
+        dim.setBackgroundColor(0x888F1E1E);
+        frameLayout.addView(dim, LayoutHelper.createFrameWithoutDp(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP,0, 0, 0, 0));
+
+        popupWindow.showAtLocation(contentView, Gravity.CENTER, 0, 0);
+        selectingSendAsPopup = popupWindow;
+    }
+
+    private void closeSendAsChat() {
+        isSelectingSendAsChat = false;
+        chatActivityEnterView.toggleSendMessageAsButton(isSelectingSendAsChat);
+        if (selectingSendAsPopup != null) {
+            selectingSendAsPopup.dismiss();
+        }
+    }
+
+    private void openSendAsChat() {
+        isSelectingSendAsChat = true;
+        chatActivityEnterView.toggleSendMessageAsButton(isSelectingSendAsChat);
+        showSelectingSendAsPopup();
+    }
+
+    private void switchSelectingSendAsChat() {
+//        popupWindow
+        if (!isSelectingSendAsChat) {
+            openSendAsChat();
+        } else {
+            closeSendAsChat();
+        }
+
+//        dimBehind(popupWindow, v -> {
+//            popupWindow.dismiss();
+//        });
+//        view.setOnTouchListener(new View.OnTouchListener() {
+//            @Override
+//            public boolean onTouch(View v, MotionEvent event) {
+//                popupWindow.dismiss();
+//                return true;
+//            }
+//        });
     }
 
     private void fillInviterId(boolean load) {
