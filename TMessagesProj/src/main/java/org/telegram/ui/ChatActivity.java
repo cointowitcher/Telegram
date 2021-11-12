@@ -78,6 +78,7 @@ import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.animation.DecelerateInterpolator;
+import android.view.animation.LinearInterpolator;
 import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -221,6 +222,7 @@ import org.telegram.ui.Components.RecyclerAnimationScrollHelper;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ReportAlert;
 import org.telegram.ui.Components.SearchCounterView;
+import org.telegram.ui.Components.SendMessageAsListView;
 import org.telegram.ui.Components.ShareAlert;
 import org.telegram.ui.Components.Size;
 import org.telegram.ui.Components.SizeNotifierFrameLayout;
@@ -1712,37 +1714,81 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
         return true;
     }
-    PopupWindow selectingSendAsPopup;
+    SendMessageAsListView sendMessageAsListView;
+    int keyboardHeight;
 
     private void showSelectingSendAsPopup() {
-        FrameLayout frameLayout = new FrameLayout(contentView.getContext());
-        PopupWindow popupWindow = new PopupWindow(frameLayout, contentView.getWidth(), contentView.getHeight());
-
-        View bgView = new View(contentView.getContext());
-        bgView.setBackgroundColor(0x00000000);
-        frameLayout.addView(bgView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
-        bgView.setOnClickListener(v -> {
+        sendMessageAsListView = new SendMessageAsListView(contentView.getContext());
+        FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrameWithoutDp(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM,0, 0, 0, chatActivityEnterView.getHeight() - AndroidUtilities.dp(0.5f));
+        getParentActivity().getWindow().addContentView(sendMessageAsListView, layoutParams);
+        sendMessageAsListView.setup(v -> {
             closeSendAsChat();
         });
+        keyboardHeight = contentView.getKeyboardHeight() + chatActivityEnterView.getEmojiPadding();
+        sendMessageAsListView.setTranslationY(-keyboardHeight);
+        contentView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
+            @Override
+            public void onGlobalLayout() {
+                if (contentView != null) {
+                    int newKeyboardHeight = contentView.getKeyboardHeight() + chatActivityEnterView.getEmojiPadding();
+                    if (keyboardHeight == newKeyboardHeight) {
+                        return;
+                    }
+                    keyboardHeight = newKeyboardHeight;
+                    AnimatorSet animatorSet = new AnimatorSet();
+                    animatorSet.playTogether(
+                            ObjectAnimator.ofFloat(sendMessageAsListView, "translationY", -newKeyboardHeight)
+                    );
+                    animatorSet.setInterpolator(AdjustPanLayoutHelper.keyboardInterpolator);
+                    animatorSet.setDuration(AdjustPanLayoutHelper.keyboardDuration);
+                    animatorSet.start();
+                    Log.d("sergeyt", String.valueOf(keyboardHeight));
+                }
+            }
+        });
+//        FrameLayout frameLayout = new FrameLayout(contentView.getContext());
+//        FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrameWithoutDp(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM,0, 0, 0, chatActivityEnterView.getHeight());
+//        getParentActivity().getWindow().addContentView(frameLayout, layoutParams);
+//        FrameLayout bgView = new FrameLayout(contentView.getContext());
+//        bgView.setBackgroundColor(0x00000000);
+//        frameLayout.addView(bgView, LayoutHelper.createFrameWithoutDp(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.BOTTOM, 0,0,0,0));
+//        bgView.setOnClickListener(v -> {
+//            closeSendAsChat();
+//        });
+//
+//        View dim = new View(bgView.getContext());
+//        dim.setBackgroundColor(0x33000000);
+//        frameLayout.addView(dim, LayoutHelper.createFrameWithoutDp(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.BOTTOM,0, 0, 0, 0));
+//
+//        SendMessageAsListView sendMessageAsListView = new SendMessageAsListView(contentView.getContext());
+//        frameLayout.addView(sendMessageAsListView);
+//        sendMessageAsListView.show(chatActivityEnterView, ObjectAnimator.ofFloat(dim, View.ALPHA, 0.0f, 1.0f));
 
-        View dim = new View(bgView.getContext());
-        //dim.setBackgroundColor(0x3300F0F0);
-        dim.setBackgroundColor(0x888F1E1E);
-        frameLayout.addView(dim, LayoutHelper.createFrameWithoutDp(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP,0, 0, 0, 0));
-
-        popupWindow.showAtLocation(contentView, Gravity.CENTER, 0, 0);
-        selectingSendAsPopup = popupWindow;
+//        selectingSendAsPopup = popupWindow;
     }
 
     private void closeSendAsChat() {
         isSelectingSendAsChat = false;
         chatActivityEnterView.toggleSendMessageAsButton(isSelectingSendAsChat);
-        if (selectingSendAsPopup != null) {
-            selectingSendAsPopup.dismiss();
+        if (sendMessageAsListView != null) {
+            sendMessageAsListView.hide(new SendMessageAsListView.Callback() {
+                @Override
+                public void callback() {
+                    if (sendMessageAsListView != null) {
+                        ((ViewGroup) sendMessageAsListView.getParent()).removeView(sendMessageAsListView);
+                        sendMessageAsListView = null;
+                    }
+                }
+            });
+
+
         }
     }
 
     private void openSendAsChat() {
+        if (sendMessageAsListView != null && sendMessageAsListView.getIsHiding()) {
+            return;
+        }
         isSelectingSendAsChat = true;
         chatActivityEnterView.toggleSendMessageAsButton(isSelectingSendAsChat);
         showSelectingSendAsPopup();
@@ -3312,6 +3358,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         if (keyboardSize > AndroidUtilities.dp(20) && getLayoutParams().height < 0) {
                             h += keyboardSize;
                         }
+                        Log.d("keyboardchange1", String.valueOf(h));
                         int contentWidthSpec = MeasureSpec.makeMeasureSpec(widthSize, MeasureSpec.EXACTLY);
                         int contentHeightSpec = MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY);
                         child.measure(contentWidthSpec, contentHeightSpec);
@@ -3321,6 +3368,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         if (keyboardSize > AndroidUtilities.dp(20) && getLayoutParams().height < 0) {
                             h += keyboardSize;
                         }
+                        Log.d("keyboardchange1", String.valueOf(h));
                         int contentHeightSpec = MeasureSpec.makeMeasureSpec(Math.max(AndroidUtilities.dp(10), h), MeasureSpec.EXACTLY);
                         child.measure(contentWidthSpec, contentHeightSpec);
                     } else if (child == progressView) {
@@ -3416,6 +3464,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         if (keyboardSize > AndroidUtilities.dp(20) && getLayoutParams().height < 0) {
                             h += keyboardSize;
                         }
+                        Log.d("keyboardchange3", String.valueOf(h));
                         int contentHeightSpec = MeasureSpec.makeMeasureSpec(h, MeasureSpec.EXACTLY);
                         child.measure(contentWidthSpec, contentHeightSpec);
                     } else {
