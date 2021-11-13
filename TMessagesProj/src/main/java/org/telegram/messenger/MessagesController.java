@@ -25,7 +25,6 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.util.SparseBooleanArray;
 import android.util.SparseIntArray;
-import android.view.View;
 
 import androidx.collection.LongSparseArray;
 import androidx.core.app.NotificationManagerCompat;
@@ -3354,6 +3353,8 @@ public class MessagesController extends BaseController implements NotificationCe
             if (error == null) {
                 TLRPC.TL_messages_chatFull res = (TLRPC.TL_messages_chatFull) response;
                 callback.getFullChat(res.full_chat);
+            } else {
+                callback.getFullChat(null);
             }
         });
     }
@@ -4886,6 +4887,10 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public void doSomethingCool(long chatId, GetPeers callback) {
         getFullChat(chatFull -> {
+            if (chatFull == null) {
+                callback.didGetPeers(null, null);
+                return;
+            }
             TLRPC.TL_channels_getSendAs req = new TLRPC.TL_channels_getSendAs();
             req.peer = getInputPeer(getChat(chatId));
             if ((chatFull.flags & 8) == 0) {

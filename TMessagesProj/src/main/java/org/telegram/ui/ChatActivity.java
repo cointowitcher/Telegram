@@ -1458,12 +1458,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 Log.d("sergey", "satisfied");
                 getMessagesController().doSomethingCool(chatId, (sendAsPeers, chatFull) -> {
                     if (sendAsPeers != null && chatFull != null) {
-                        ChatActivity t = (ChatActivity) this;
-                        AndroidUtilities.runOnUIThread(() -> {
-                            chatActivityEnterView.addSendMessageAsButton(getMessagesController().getChat(sendAsPeers.peers.get(0).channel_id), v -> {
-                                switchSelectingSendAsChat();
-                            });
-                        });
+                        processSendAsPeers(sendAsPeers);
                     }
                 });
             }
@@ -1716,12 +1711,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
     SendMessageAsListView sendMessageAsListView;
     int keyboardHeight;
+    ArrayList<TLRPC.ChatFull> chatFullsForSendAs;
+    ArrayList<TLRPC.Chat> chatsForSendAs;
 
     private void showSelectingSendAsPopup() {
         sendMessageAsListView = new SendMessageAsListView(contentView.getContext());
         FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrameWithoutDp(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM,0, 0, 0, chatActivityEnterView.getHeight() - AndroidUtilities.dp(0.5f));
         getParentActivity().getWindow().addContentView(sendMessageAsListView, layoutParams);
-        sendMessageAsListView.setup(v -> {
+        sendMessageAsListView.setup(chatFullsForSendAs, chatsForSendAs, v -> {
             closeSendAsChat();
         });
         keyboardHeight = contentView.getKeyboardHeight() + chatActivityEnterView.getEmojiPadding();
@@ -1765,6 +1762,50 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 //        sendMessageAsListView.show(chatActivityEnterView, ObjectAnimator.ofFloat(dim, View.ALPHA, 0.0f, 1.0f));
 
 //        selectingSendAsPopup = popupWindow;
+    }
+
+    int processSendAsPeersSemaphore;
+    private void processSendAsPeers(TLRPC.TL_channels_sendAsPeers sendAsPeers) {
+//        ArrayList<TLRPC.ChatFull> chatFulls = new ArrayList<>();
+//
+//        for(int i = 0; i < sendAsPeers.peers.size(); i++) {
+//            long chatId = 0;
+//            getFullChat(chatFull -> {
+//                semaphore -= 1;
+//                if (chatFull != null) {
+//                    chatFulls.add(chatFull);
+//                }
+//            }, chatId);
+//        }
+        processSendAsPeersSemaphore = sendAsPeers.peers.size();
+        chatFullsForSendAs = null;
+        chatsForSendAs = null;
+        chatFullsForSendAs = new ArrayList<>();
+        chatsForSendAs = new ArrayList<>();
+        for(int i = 0; i < sendAsPeers.peers.size(); i++) {
+            long chatId;
+            if (sendAsPeers.peers.get(i).channel_id != 0) {
+                chatId = sendAsPeers.peers.get(i).channel_id;
+            } else if(sendAsPeers.peers.get(i).chat_id != 0) {
+                chatId = sendAsPeers.peers.get(i).chat_id;
+            } else {
+                chatId = sendAsPeers.peers.get(i).user_id;
+            }
+            getMessagesController().getFullChat(chatFull -> {
+                processSendAsPeersSemaphore -= 1;
+                if (chatFull != null) {
+                    chatFullsForSendAs.add(chatFull);
+                    chatsForSendAs.add(getMessagesController().getChat(chatId));
+                }
+                if (processSendAsPeersSemaphore == 0 && chatFullsForSendAs.size() > 1) {
+                    AndroidUtilities.runOnUIThread(() -> {
+                        chatActivityEnterView.addSendMessageAsButton(getMessagesController().getChat(sendAsPeers.peers.get(0).channel_id), v -> {
+                            switchSelectingSendAsChat();
+                        });
+                    });
+                }
+            }, chatId);
+        }
     }
 
     private void closeSendAsChat() {
