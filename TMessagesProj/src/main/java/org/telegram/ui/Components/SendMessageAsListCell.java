@@ -1,13 +1,18 @@
 package org.telegram.ui.Components;
 
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.graphics.Color;
 import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.Cells.MemberRequestCell;
 
 import java.util.Random;
 
@@ -17,10 +22,28 @@ public class SendMessageAsListCell extends FrameLayout {
     private TextView topTextView;
     private TextView bottomTextView;
     private AvatarDrawable avatarDrawable = new AvatarDrawable();
+    private SendMessageAsListCellDelegate delegate;
+    private long chatId = 0;
 
-    public SendMessageAsListCell(Context context) {
+    public SendMessageAsListCell(Context context, SendMessageAsListCellDelegate delegate) {
         super(context);
+        this.delegate = delegate;
         setup();
+        setClickListeners();
+    }
+    private void setClickListeners() {
+        setOnTouchListener(new SendMessageAsTouchListener(new SendMessageAsTouchListener.OnListener() {
+            @Override
+            public void onActionDown(View view, MotionEvent motionEvent) {
+                setBackgroundColor(0x22000000);
+                delegate.onSelected(chatId);
+            }
+
+            @Override
+            public void onActionUp(View view, MotionEvent motionEvent) {
+                setBackgroundColor(0x00000000);
+            }
+        }));
     }
 
     private void setup() {
@@ -41,6 +64,7 @@ public class SendMessageAsListCell extends FrameLayout {
     }
 
     public void configure(String text1, String text2, TLRPC.Chat chat) {
+        chatId = chat.id;
         topTextView.setText(text1);
         bottomTextView.setText(text2);
         avatarDrawable.setInfo(chat);
@@ -55,5 +79,35 @@ public class SendMessageAsListCell extends FrameLayout {
         int color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
         avatarDrawable.setColor(color);
         avatarImageView.setImageDrawable(avatarDrawable);
+    }
+
+    public interface SendMessageAsListCellDelegate {
+        void onSelected(long id);
+    }
+}
+
+class SendMessageAsTouchListener implements View.OnTouchListener {
+
+    interface OnListener {
+        void onActionDown(View view, MotionEvent motionEvent);
+        void onActionUp(View view, MotionEvent motionEvent);
+    }
+    OnListener listener;
+    public SendMessageAsTouchListener(OnListener listener) {
+        super();
+        this.listener = listener;
+    }
+
+    public boolean onTouch(View view, MotionEvent motionEvent) {
+        switch (motionEvent.getAction()) {
+            case MotionEvent.ACTION_DOWN:
+                this.listener.onActionDown(view, motionEvent);
+                break;
+            case MotionEvent.ACTION_CANCEL:
+            case MotionEvent.ACTION_UP:
+                this.listener.onActionUp(view, motionEvent);
+                break;
+        }
+        return true;
     }
 }

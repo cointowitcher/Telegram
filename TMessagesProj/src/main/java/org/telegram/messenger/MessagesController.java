@@ -3339,20 +3339,17 @@ public class MessagesController extends BaseController implements NotificationCe
             TLRPC.TL_channels_getFullChannel req = new TLRPC.TL_channels_getFullChannel();
             req.channel = getInputChannel(chat);
             request = req;
-            loadChannelAdmins(chatId, false);
         } else {
             TLRPC.TL_messages_getFullChat req = new TLRPC.TL_messages_getFullChat();
             req.chat_id = chatId;
             request = req;
-            if (dialogs_read_inbox_max.get(dialogId) == null || dialogs_read_outbox_max.get(dialogId) == null) {
-                reloadDialogsReadValue(null, dialogId);
-            }
         }
         getConnectionsManager().sendRequest(request, (response, error) -> {
             loadingFullChats.remove(chatId);
             if (error == null) {
                 TLRPC.TL_messages_chatFull res = (TLRPC.TL_messages_chatFull) response;
                 callback.getFullChat(res.full_chat);
+                fullChats.append(chatId, res.full_chat);
             } else {
                 callback.getFullChat(null);
             }
@@ -5606,6 +5603,20 @@ public class MessagesController extends BaseController implements NotificationCe
         getLocationController().update();
         checkPromoInfoInternal(false);
         checkTosUpdate();
+    }
+
+
+    public void saveDefaultSendAs(long chatId, long originalId) {
+        TLRPC.TL_messages_saveDefaultSendAs req = new TLRPC.TL_messages_saveDefaultSendAs();
+        req.send_as = getInputPeer(getChat(chatId));
+        req.peer = getInputPeer(getChat(originalId));
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (error == null) {
+                Log.d("sergey","saveDefaultSendAs cool");
+            } else {
+                Log.d("sergey","saveDefaultSendAs not cool");
+            }
+        });
     }
 
     private void checkTosUpdate() {

@@ -23,9 +23,11 @@ public class SendMessageAsListView extends FrameLayout {
     View dim;
     boolean isHiding = false;
     int calculatedHeight;
+    SendMessageAsListCell.SendMessageAsListCellDelegate cellDelegate;
 
-    public SendMessageAsListView(Context context) {
+    public SendMessageAsListView(Context context, SendMessageAsListCell.SendMessageAsListCellDelegate cellDelegate) {
         super(context);
+        this.cellDelegate = cellDelegate;
     }
 
     public void setup(ArrayList<TLRPC.ChatFull> chatFulls, ArrayList<TLRPC.Chat> chats, OnClickListener bgClicked) {
@@ -36,7 +38,7 @@ public class SendMessageAsListView extends FrameLayout {
     }
 
     private void createMainView(ArrayList<TLRPC.ChatFull> chatFulls, ArrayList<TLRPC.Chat> chats) {
-        mainView = new SendMessageAsListScrollView(getContext());
+        mainView = new SendMessageAsListScrollView(getContext(), cellDelegate);
 
         int maxHeight = 0;
         calculatedHeight = AndroidUtilities.dp(44f + 61 * chatFulls.size());

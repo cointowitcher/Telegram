@@ -46,6 +46,8 @@ import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.SystemClock;
 import android.os.Vibrator;
 import android.provider.MediaStore;
@@ -222,6 +224,7 @@ import org.telegram.ui.Components.RecyclerAnimationScrollHelper;
 import org.telegram.ui.Components.RecyclerListView;
 import org.telegram.ui.Components.ReportAlert;
 import org.telegram.ui.Components.SearchCounterView;
+import org.telegram.ui.Components.SendMessageAsListCell;
 import org.telegram.ui.Components.SendMessageAsListView;
 import org.telegram.ui.Components.ShareAlert;
 import org.telegram.ui.Components.Size;
@@ -1713,9 +1716,18 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     int keyboardHeight;
     ArrayList<TLRPC.ChatFull> chatFullsForSendAs;
     ArrayList<TLRPC.Chat> chatsForSendAs;
+    long selectedChatIdAsSendAs;
 
     private void showSelectingSendAsPopup() {
-        sendMessageAsListView = new SendMessageAsListView(contentView.getContext());
+        sendMessageAsListView = new SendMessageAsListView(contentView.getContext(), new SendMessageAsListCell.SendMessageAsListCellDelegate() {
+            @Override
+            public void onSelected(long id) {
+                getMessagesController().saveDefaultSendAs(id, currentChat.id);
+                selectedChatIdAsSendAs = id;
+                chatActivityEnterView.setSendMessageAsButtonChat(getMessagesController().getChat(selectedChatIdAsSendAs));
+                closeSendAsChat();
+            }
+        });
         FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrameWithoutDp(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM,0, 0, 0, chatActivityEnterView.getHeight() - AndroidUtilities.dp(0.5f));
         getParentActivity().getWindow().addContentView(sendMessageAsListView, layoutParams);
         sendMessageAsListView.setup(chatFullsForSendAs, chatsForSendAs, v -> {
@@ -1765,23 +1777,20 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     int processSendAsPeersSemaphore;
+    HandlerThread processSendAsPeersThread;
+    Handler processSendAsPeersHandler;
+
     private void processSendAsPeers(TLRPC.TL_channels_sendAsPeers sendAsPeers) {
-//        ArrayList<TLRPC.ChatFull> chatFulls = new ArrayList<>();
-//
-//        for(int i = 0; i < sendAsPeers.peers.size(); i++) {
-//            long chatId = 0;
-//            getFullChat(chatFull -> {
-//                semaphore -= 1;
-//                if (chatFull != null) {
-//                    chatFulls.add(chatFull);
-//                }
-//            }, chatId);
-//        }
+        processSendAsPeersThread = new HandlerThread("ProcessSendAsPeers");
+        processSendAsPeersThread.start();
+
+        processSendAsPeersHandler = new Handler(processSendAsPeersThread.getLooper());
         processSendAsPeersSemaphore = sendAsPeers.peers.size();
         chatFullsForSendAs = null;
         chatsForSendAs = null;
         chatFullsForSendAs = new ArrayList<>();
         chatsForSendAs = new ArrayList<>();
+
         for(int i = 0; i < sendAsPeers.peers.size(); i++) {
             long chatId;
             if (sendAsPeers.peers.get(i).channel_id != 0) {
@@ -1792,18 +1801,35 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 chatId = sendAsPeers.peers.get(i).user_id;
             }
             getMessagesController().getFullChat(chatFull -> {
-                processSendAsPeersSemaphore -= 1;
                 if (chatFull != null) {
                     chatFullsForSendAs.add(chatFull);
                     chatsForSendAs.add(getMessagesController().getChat(chatId));
                 }
-                if (processSendAsPeersSemaphore == 0 && chatFullsForSendAs.size() > 1) {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        chatActivityEnterView.addSendMessageAsButton(getMessagesController().getChat(sendAsPeers.peers.get(0).channel_id), v -> {
-                            switchSelectingSendAsChat();
-                        });
-                    });
-                }
+                processSendAsPeersHandler.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        processSendAsPeersSemaphore -= 1;
+                        if (processSendAsPeersSemaphore == 0 && chatFullsForSendAs.size() > 1) {
+                            AndroidUtilities.runOnUIThread(() -> {
+                                if (chatFull.default_send_as != null) {
+                                    if (chatFull.default_send_as.channel_id != 0) {
+                                        selectedChatIdAsSendAs = chatFull.default_send_as.channel_id;
+                                    } else if(chatFull.default_send_as.chat_id != 0) {
+                                        selectedChatIdAsSendAs = chatFull.default_send_as.chat_id;
+                                    } else if(chatFull.default_send_as.user_id != 0) {
+                                        selectedChatIdAsSendAs = chatFull.default_send_as.user_id;
+                                    }
+                                } else {
+                                 selectedChatIdAsSendAs = sendAsPeers.peers.get(0).channel_id;
+                                }
+                                chatActivityEnterView.addSendMessageAsButton(getMessagesController().getChat(selectedChatIdAsSendAs), v -> {
+                                    switchSelectingSendAsChat();
+                                });
+                            });
+                            boolean quit = processSendAsPeersThread.quit();
+                        }
+                    }
+                });
             }, chatId);
         }
     }
@@ -1821,8 +1847,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     }
                 }
             });
-
-
         }
     }
 
