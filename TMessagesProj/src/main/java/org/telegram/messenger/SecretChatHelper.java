@@ -1432,11 +1432,11 @@ public class SecretChatHelper extends BaseController {
                         TLRPC.Message message = messages.get(a);
                         MessageObject messageObject = new MessageObject(currentAccount, message, false, true);
                         messageObject.resendAsIs = true;
-                        getSendMessagesHelper().retrySendMessage(messageObject, true);
+                        getSendMessagesHelper().retrySendMessage(messageObject, true, null);
                     }
                 });
 
-                getSendMessagesHelper().processUnsentMessages(messages, null, new ArrayList<>(), new ArrayList<>(), encryptedChats);
+                getSendMessagesHelper().processUnsentMessages(messages, null, new ArrayList<>(), new ArrayList<>(), encryptedChats, null);
                 getMessagesStorage().getDatabase().executeFast(String.format(Locale.US, "REPLACE INTO requested_holes VALUES(%d, %d, %d)", encryptedChat.id, sSeq, endSeq)).stepThis().dispose();
             } catch (Exception e) {
                 FileLog.e(e);

@@ -1564,7 +1564,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                             getMessagesController().blockPeer(userId);
                         } else {
                             getMessagesController().unblockPeer(userId);
-                            getSendMessagesHelper().sendMessage("/start", userId, null, null, null, false, null, null, null, true, 0, null);
+                            getSendMessagesHelper().sendMessage("/start", userId, null, null, null, false, null, null, null, true, 0, null, null);
                             finishFragment();
                         }
                     }
@@ -6258,7 +6258,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
         presentFragment(new ChatActivity(args), true);
         removeSelfFromStack();
         TLRPC.User user = getMessagesController().getUser(userId);
-        getSendMessagesHelper().sendMessage(user, did, null, null, null, null, true, 0);
+        getSendMessagesHelper().sendMessage(user, did, null, null, null, null, true, 0, null);
     }
 
     @Override

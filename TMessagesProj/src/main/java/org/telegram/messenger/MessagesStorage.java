@@ -6603,7 +6603,7 @@ public class MessagesStorage extends BaseController {
                     getChatsInternal(stringToLoad.toString(), chats);
                 }
 
-                getSendMessagesHelper().processUnsentMessages(messages, scheduledMessages, users, chats, encryptedChats);
+                getSendMessagesHelper().processUnsentMessages(messages, scheduledMessages, users, chats, encryptedChats, null);
             } catch (Exception e) {
                 FileLog.e(e);
             }

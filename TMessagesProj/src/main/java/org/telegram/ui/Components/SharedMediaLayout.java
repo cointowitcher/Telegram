@@ -3058,9 +3058,9 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     for (int a = 0; a < dids.size(); a++) {
                         long did = dids.get(a);
                         if (message != null) {
-                            profileActivity.getSendMessagesHelper().sendMessage(message.toString(), did, null, null, null, true, null, null, null, true, 0, null);
+                            profileActivity.getSendMessagesHelper().sendMessage(message.toString(), did, null, null, null, true, null, null, null, true, 0, null, null);
                         }
-                        profileActivity.getSendMessagesHelper().sendMessage(fmessages, did, false, false, true, 0);
+                        profileActivity.getSendMessagesHelper().sendMessage(fmessages, did, false, false, true, 0, null);
                     }
                     fragment1.finishFragment();
                 } else {

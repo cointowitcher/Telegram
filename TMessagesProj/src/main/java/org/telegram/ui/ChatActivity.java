@@ -1461,7 +1461,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 Log.d("sergey", "satisfied");
                 getMessagesController().doSomethingCool(chatId, (sendAsPeers, chatFull) -> {
                     if (sendAsPeers != null && chatFull != null) {
-                        processSendAsPeers(sendAsPeers);
+                        processSendAsPeers(sendAsPeers, chatFull);
                     }
                 });
             }
@@ -1755,32 +1755,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
             }
         });
-//        FrameLayout frameLayout = new FrameLayout(contentView.getContext());
-//        FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrameWithoutDp(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM,0, 0, 0, chatActivityEnterView.getHeight());
-//        getParentActivity().getWindow().addContentView(frameLayout, layoutParams);
-//        FrameLayout bgView = new FrameLayout(contentView.getContext());
-//        bgView.setBackgroundColor(0x00000000);
-//        frameLayout.addView(bgView, LayoutHelper.createFrameWithoutDp(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.BOTTOM, 0,0,0,0));
-//        bgView.setOnClickListener(v -> {
-//            closeSendAsChat();
-//        });
-//
-//        View dim = new View(bgView.getContext());
-//        dim.setBackgroundColor(0x33000000);
-//        frameLayout.addView(dim, LayoutHelper.createFrameWithoutDp(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.BOTTOM,0, 0, 0, 0));
-//
-//        SendMessageAsListView sendMessageAsListView = new SendMessageAsListView(contentView.getContext());
-//        frameLayout.addView(sendMessageAsListView);
-//        sendMessageAsListView.show(chatActivityEnterView, ObjectAnimator.ofFloat(dim, View.ALPHA, 0.0f, 1.0f));
-
-//        selectingSendAsPopup = popupWindow;
     }
 
     int processSendAsPeersSemaphore;
     HandlerThread processSendAsPeersThread;
     Handler processSendAsPeersHandler;
 
-    private void processSendAsPeers(TLRPC.TL_channels_sendAsPeers sendAsPeers) {
+    private void processSendAsPeers(TLRPC.TL_channels_sendAsPeers sendAsPeers, TLRPC.ChatFull peerChatFull) {
         processSendAsPeersThread = new HandlerThread("ProcessSendAsPeers");
         processSendAsPeersThread.start();
 
@@ -1811,13 +1792,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         processSendAsPeersSemaphore -= 1;
                         if (processSendAsPeersSemaphore == 0 && chatFullsForSendAs.size() > 1) {
                             AndroidUtilities.runOnUIThread(() -> {
-                                if (chatFull.default_send_as != null) {
-                                    if (chatFull.default_send_as.channel_id != 0) {
-                                        selectedChatIdAsSendAs = chatFull.default_send_as.channel_id;
-                                    } else if(chatFull.default_send_as.chat_id != 0) {
-                                        selectedChatIdAsSendAs = chatFull.default_send_as.chat_id;
-                                    } else if(chatFull.default_send_as.user_id != 0) {
-                                        selectedChatIdAsSendAs = chatFull.default_send_as.user_id;
+                                if (peerChatFull.default_send_as != null) {
+                                    if (peerChatFull.default_send_as.channel_id != 0) {
+                                        selectedChatIdAsSendAs = peerChatFull.default_send_as.channel_id;
+                                    } else if(peerChatFull.default_send_as.chat_id != 0) {
+                                        selectedChatIdAsSendAs = peerChatFull.default_send_as.chat_id;
+                                    } else if(peerChatFull.default_send_as.user_id != 0) {
+                                        selectedChatIdAsSendAs = peerChatFull.default_send_as.user_id;
                                     }
                                 } else {
                                  selectedChatIdAsSendAs = sendAsPeers.peers.get(0).channel_id;
@@ -2215,7 +2196,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             }
                             BulletinFactory.of(ChatActivity.this).createDownloadBulletin(isMusic ? BulletinFactory.FileType.AUDIOS : BulletinFactory.FileType.UNKNOWNS, count, themeDelegate).show();
                         }
-                    }, selectedChatIdAsSendAs);
+                    });
                 } else if (id == chat_enc_timer) {
                     if (getParentActivity() == null) {
                         return;

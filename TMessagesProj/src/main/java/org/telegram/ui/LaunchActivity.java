@@ -2239,7 +2239,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                         LocationActivity locationActivity = new LocationActivity(2);
                         locationActivity.setMessageObject(info.messageObject);
                         final long dialog_id = info.messageObject.getDialogId();
-                        locationActivity.setDelegate((location, live, notify, scheduleDate) -> SendMessagesHelper.getInstance(intentAccount[0]).sendMessage(location, dialog_id, null, null, null, null, notify, scheduleDate));
+                        locationActivity.setDelegate((location, live, notify, scheduleDate) -> SendMessagesHelper.getInstance(intentAccount[0]).sendMessage(location, dialog_id, null, null, null, null, notify, scheduleDate, null));
                         presentFragment(locationActivity);
                     }, null));
                 }
@@ -3874,7 +3874,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                         actionBarLayout.presentFragment(fragment, true, false, true, false);
                     }
                     for (int i = 0; i < dids.size(); i++) {
-                        SendMessagesHelper.getInstance(account).sendMessage(user, dids.get(i), null, null, null, null, notify, scheduleDate);
+                        SendMessagesHelper.getInstance(account).sendMessage(user, dids.get(i), null, null, null, null, notify, scheduleDate, null);
                     }
                 });
                 mainFragmentsStack.get(mainFragmentsStack.size() - 1).showDialog(alert);
@@ -3898,7 +3898,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                             }
                             ArrayList<String> arrayList = new ArrayList<>();
                             arrayList.add(videoPath);
-                            SendMessagesHelper.prepareSendingDocuments(accountInstance, arrayList, arrayList, null, captionToSend, null, did, null, null, null, null, true, 0);
+                            SendMessagesHelper.prepareSendingDocuments(accountInstance, arrayList, arrayList, null, captionToSend, null, did, null, null, null, null, true, 0, null);
                         }
                     }
                     if (photoPathsArray != null) {
@@ -3906,26 +3906,26 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                             photoPathsArray.get(0).caption = sendingText;
                             sendingText = null;
                         }
-                        SendMessagesHelper.prepareSendingMedia(accountInstance, photoPathsArray, did, null, null, null, false, false, null, true, 0);
+                        SendMessagesHelper.prepareSendingMedia(accountInstance, photoPathsArray, did, null, null, null, false, false, null, true, 0, null);
                     }
                     if (documentsPathsArray != null || documentsUrisArray != null) {
                         if (sendingText != null && sendingText.length() <= 1024 && ((documentsPathsArray != null ? documentsPathsArray.size() : 0) + (documentsUrisArray != null ? documentsUrisArray.size() : 0)) == 1) {
                             captionToSend = sendingText;
                             sendingText = null;
                         }
-                        SendMessagesHelper.prepareSendingDocuments(accountInstance, documentsPathsArray, documentsOriginalPathsArray, documentsUrisArray, captionToSend, documentsMimeType, did, null, null, null, null, true, 0);
+                        SendMessagesHelper.prepareSendingDocuments(accountInstance, documentsPathsArray, documentsOriginalPathsArray, documentsUrisArray, captionToSend, documentsMimeType, did, null, null, null, null, true, 0, null);
                     }
                     if (sendingText != null) {
-                        SendMessagesHelper.prepareSendingText(accountInstance, sendingText, did, true, 0);
+                        SendMessagesHelper.prepareSendingText(accountInstance, sendingText, did, true, 0, null);
                     }
                     if (contactsToSend != null && !contactsToSend.isEmpty()) {
                         for (int a = 0; a < contactsToSend.size(); a++) {
                             TLRPC.User user = contactsToSend.get(a);
-                            SendMessagesHelper.getInstance(account).sendMessage(user, did, null, null, null, null, true, 0);
+                            SendMessagesHelper.getInstance(account).sendMessage(user, did, null, null, null, null, true, 0, null);
                         }
                     }
                     if (!TextUtils.isEmpty(message)) {
-                        SendMessagesHelper.prepareSendingText(accountInstance, message.toString(), did, true, 0);
+                        SendMessagesHelper.prepareSendingText(accountInstance, message.toString(), did, true, 0, null);
                     }
                 }
             }
@@ -4443,7 +4443,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                 fragment.setDelegate((location, live, notify, scheduleDate) -> {
                     for (HashMap.Entry<String, MessageObject> entry : waitingForLocation.entrySet()) {
                         MessageObject messageObject = entry.getValue();
-                        SendMessagesHelper.getInstance(account).sendMessage(location, messageObject.getDialogId(), messageObject, null, null, null, notify, scheduleDate);
+                        SendMessagesHelper.getInstance(account).sendMessage(location, messageObject.getDialogId(), messageObject, null, null, null, notify, scheduleDate, null);
                     }
                 });
                 presentFragment(fragment);
