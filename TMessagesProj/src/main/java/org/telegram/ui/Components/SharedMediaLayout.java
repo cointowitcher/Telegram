@@ -384,6 +384,11 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     private ActionBarMenuItem deleteItem;
     private ActionBarMenuItem searchItem;
     public ImageView photoVideoOptionsItem;
+
+    public ActionBarMenuItem getForwardItem() {
+        return forwardItem;
+    }
+
     private ActionBarMenuItem forwardItem;
     private ActionBarMenuItem gotoItem;
     private int searchItemState;

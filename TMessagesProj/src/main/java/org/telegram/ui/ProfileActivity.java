@@ -973,10 +973,13 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             invalidate();
         }
     }
-
+    interface NestedFrameOnScroll {
+        void onScroll();
+    }
     private class NestedFrameLayout extends FrameLayout implements NestedScrollingParent3 {
 
         private NestedScrollingParentHelper nestedScrollingParentHelper;
+        public NestedFrameOnScroll onScroll;
 
         public NestedFrameLayout(Context context) {
             super(context);
@@ -985,6 +988,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         @Override
         public void onNestedScroll(View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type, int[] consumed) {
+            if (onScroll != null) {
+                onScroll.onScroll();
+            }
             if (target == listView && sharedMediaLayoutAttached) {
                 RecyclerListView innerListView = sharedMediaLayout.getCurrentListView();
                 int top = sharedMediaLayout.getTop();
@@ -997,7 +1003,6 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
 
         @Override
         public void onNestedScroll(View target, int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed, int type) {
-
         }
 
         @Override
@@ -1925,7 +1930,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             @Override
             protected void showHintRestricted(View view) {
                 ActionBarMenuItem actionBarMenuItem = (ActionBarMenuItem) view;
-                if (pa == null || pa.fragmentView == null) {
+                if (pa == null || pa.fragmentView == null || actionBarMenuItem == null) {
                     return;
                 }
                 FrameLayout frameLayout = (FrameLayout) pa.fragmentView;
@@ -2341,6 +2346,19 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
                     return true;
                 }
                 return super.drawChild(canvas, child, drawingTime);
+            }
+        };
+        ((NestedFrameLayout)fragmentView).onScroll = new NestedFrameOnScroll() {
+            @Override
+            public void onScroll() {
+                if (hintRestricted == null || sharedMediaLayout == null) {
+                    return;
+                }
+                ActionBarMenuItem actionBarMenuItem = (ActionBarMenuItem) sharedMediaLayout.getForwardItem();
+                if (actionBarMenuItem == null) {
+                    return;
+                }
+                hintRestricted.updatePosition(actionBarMenuItem.getIconView());
             }
         };
         fragmentView.setWillNotDraw(false);

@@ -334,7 +334,7 @@ public class HintView extends FrameLayout {
         return true;
     }
 
-    private void updatePosition(View view) {
+    public void updatePosition(View view) {
         measure(MeasureSpec.makeMeasureSpec(AndroidUtilities.displaySize.x, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(AndroidUtilities.displaySize.x, MeasureSpec.AT_MOST));
 
         int[] position = new int[2];
