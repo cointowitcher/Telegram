@@ -67,7 +67,7 @@ public class SendMessageAsListScrollView extends FrameLayout {
             TLRPC.ChatFull chatFull = chatFulls.get(i);
             TLRPC.Chat chat = chats.get(i);
             SendMessageAsListCell cell = new SendMessageAsListCell(getContext(), cellDelegate);
-            cell.configure(chat.title, "Subscribers " + String.valueOf(chatFull.participants_count), chat);
+            cell.configure(chat.title, String.valueOf(chatFull.participants_count) + " subscribers", chat);
             linearLayout.addView(cell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 61, Gravity.TOP));
             cells[i] = cell;
         }

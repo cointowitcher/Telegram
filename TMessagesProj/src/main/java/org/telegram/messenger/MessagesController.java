@@ -3323,6 +3323,10 @@ public class MessagesController extends BaseController implements NotificationCe
         void getFullChat(TLRPC.ChatFull chatFull);
     }
 
+    public int getCurrentAccount() {
+        return currentAccount;
+    }
+
     public void getFullChat(GetFullChat callback, long chatId) {
         if (fullChats.containsKey(chatId)) {
             callback.getFullChat(fullChats.get(chatId));

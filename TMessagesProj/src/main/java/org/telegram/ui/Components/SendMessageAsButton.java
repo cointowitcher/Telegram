@@ -23,9 +23,9 @@ public class SendMessageAsButton extends FrameLayout {
         super(context);
         avatarImageView = new BackupImageView(context);
         avatarImageView.setRoundRadius(AndroidUtilities.dp(24));
-        addView(avatarImageView, LayoutHelper.createFrame(AndroidUtilities.dp(11), AndroidUtilities.dp(11), Gravity.CENTER, 0, 0, 0, 0));
+        addView(avatarImageView, LayoutHelper.createFrame(30, 30, Gravity.CENTER, 0, 0, 0, 0));
 
-        checkBox2 = new CheckBox2(context, AndroidUtilities.dp(11.7f), resourcesProvider, true);
+        checkBox2 = new CheckBox2(context, 33, resourcesProvider, true);
         checkBox2.setColor(null, Theme.key_windowBackgroundWhite, Theme.key_checkboxCheck);
         checkBox2.setDrawUnchecked(false);
         checkBox2.setDrawBackgroundAsArc(3);
@@ -46,9 +46,7 @@ public class SendMessageAsButton extends FrameLayout {
 
     public void setVisible(boolean visible) {
         this.visible = visible;
-        if (visible) {
-
-        }
+        setVisibility(visible ? View.VISIBLE : View.GONE);
     }
 
     public void setChecked(boolean enabled, boolean animated) {

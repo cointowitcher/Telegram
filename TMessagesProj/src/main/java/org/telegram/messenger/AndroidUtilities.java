@@ -3220,9 +3220,9 @@ public class AndroidUtilities {
         return null;
     }
 
-    public static Long getChatPeer(String key) {
+    public static Long getChatPeer(int acc, String key) {
         SharedPreferences peersArray = ApplicationLoader.applicationContext.getSharedPreferences("chatPeersArray", Context.MODE_PRIVATE);
-        long value = peersArray.getLong(key, 0);
+        long value = peersArray.getLong(String.valueOf(acc) + key, 0);
         if (value == 0) {
             return null;
         } else {
@@ -3230,14 +3230,19 @@ public class AndroidUtilities {
         }
     }
 
-    public static void setChatPeer(String key, long peer) {
+
+    public static void setChatPeer(int acc, String key, Long peer) {
         SharedPreferences peersArray = ApplicationLoader.applicationContext.getSharedPreferences("chatPeersArray", Context.MODE_PRIVATE);
-        peersArray.edit().putLong(key, peer).putInt(key + "upd", Calendar.getInstance().get(Calendar.SECOND)).apply();
+        if (peer == null) {
+            peersArray.edit().remove(String.valueOf(acc) + key).apply();
+            return;
+        }
+        peersArray.edit().putLong(String.valueOf(acc) + key, peer).putInt(String.valueOf(acc) + key + "upd", Calendar.getInstance().get(Calendar.SECOND)).apply();
     }
 
-    public static int getLastTimeUpdated(String key) {
+    public static int getLastTimeUpdated(int acc, String key) {
         SharedPreferences peersArray = ApplicationLoader.applicationContext.getSharedPreferences("chatPeersArray", Context.MODE_PRIVATE);
-        return peersArray.getInt(key + "upd", 0);
+        return peersArray.getInt(String.valueOf(acc) + key + "upd", 0);
     }
 
     public static void fixGoogleMapsBug() { //https://issuetracker.google.com/issues/154855417#comment301

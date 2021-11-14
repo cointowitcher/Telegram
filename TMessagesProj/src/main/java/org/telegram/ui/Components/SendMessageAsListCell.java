@@ -36,12 +36,14 @@ public class SendMessageAsListCell extends FrameLayout {
             @Override
             public void onActionDown(View view, MotionEvent motionEvent) {
                 setBackgroundColor(0x22000000);
-                delegate.onSelected(chatId);
             }
 
             @Override
             public void onActionUp(View view, MotionEvent motionEvent) {
                 setBackgroundColor(0x00000000);
+                if ((motionEvent.getActionMasked() & MotionEvent.ACTION_CANCEL) == 0) {
+                    delegate.onSelected(chatId);
+                }
             }
         }));
     }
@@ -55,6 +57,7 @@ public class SendMessageAsListCell extends FrameLayout {
         topTextView = new TextView(context);
         topTextView.setTextColor(0xff222222);
         topTextView.setTextSize(17.45f);
+        topTextView.setLines(1);
         addView(topTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.LEFT, 65.46f, 8, 0, 0));
 
         bottomTextView = new TextView(context);

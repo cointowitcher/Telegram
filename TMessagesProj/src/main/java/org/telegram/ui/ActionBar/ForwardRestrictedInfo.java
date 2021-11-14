@@ -34,8 +34,9 @@ public class ForwardRestrictedInfo extends FrameLayout {
         textView.setSingleLine(false);
         textView.setGravity(Gravity.LEFT);
         textView.setTextColor(textColor);
-        textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-        setPadding(48, 29, 48, 29);
+        textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 15.28f);
+
+        setPadding(AndroidUtilities.dp(17.46f), AndroidUtilities.dp(10.55f), AndroidUtilities.dp(17.46f), AndroidUtilities.dp(10.55f));
         addView(textView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, (LocaleController.isRTL ? Gravity.RIGHT : Gravity.LEFT) | Gravity.CENTER_VERTICAL));
         setEnabled(false);
     }

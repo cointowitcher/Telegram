@@ -8470,9 +8470,13 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                 messageEditText.setLayoutParams(layoutParams);
             } else {
                 for (int i = 0; i < emojiButton.length; i++) {
-                    ((MarginLayoutParams) emojiButton[i].getLayoutParams()).leftMargin = AndroidUtilities.dp(3) + sendMessageAsButton.getPossibleWidth();
+                    MarginLayoutParams layoutParams = (MarginLayoutParams) emojiButton[i].getLayoutParams();
+                    layoutParams.leftMargin = AndroidUtilities.dp(3);
+                    emojiButton[i].setLayoutParams(layoutParams);
                 }
-                ((MarginLayoutParams) messageEditText.getLayoutParams()).leftMargin = AndroidUtilities.dp(50) + sendMessageAsButton.getPossibleWidth();
+                MarginLayoutParams layoutParams = (MarginLayoutParams) messageEditText.getLayoutParams();
+                layoutParams.leftMargin = AndroidUtilities.dp(50);
+                messageEditText.setLayoutParams(layoutParams);
             }
         }
         if (botCommandsMenuContainer != null) {

@@ -1358,7 +1358,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         int migrated_to = arguments.getInt("migrated_to", 0);
         scrollToTopOnResume = arguments.getBoolean("scrollToTopOnResume", false);
         needRemovePreviousSameChatActivity = arguments.getBoolean("need_remove_previous_same_chat_activity", true);
-
         if (chatId != 0) {
             currentChat = getMessagesController().getChat(chatId);
             if (currentChat == null) {
@@ -1712,11 +1711,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 getMessagesController().saveDefaultSendAs(id, currentChat.id);
                 selectedChatIdAsSendAs = id;
                 chatActivityEnterView.setSendMessageAsButtonChat(getMessagesController().getChat(selectedChatIdAsSendAs));
-                AndroidUtilities.setChatPeer(String.valueOf(chatId), selectedChatIdAsSendAs);
+                AndroidUtilities.setChatPeer(currentAccount, String.valueOf(chatId), selectedChatIdAsSendAs);
                 closeSendAsChat();
             }
         });
-        FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrameWithoutDp(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM,0, 0, 0, chatActivityEnterView.getHeight() - AndroidUtilities.dp(0.5f));
+        FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrameWithoutDp(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM,0, 0, 0, chatActivityEnterView.getHeight() - AndroidUtilities.dp(1));
         getParentActivity().getWindow().addContentView(sendMessageAsListView, layoutParams);
         sendMessageAsListView.setup(chatFullsForSendAs, chatsForSendAs, v -> {
             closeSendAsChat();
@@ -1759,7 +1758,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         chatsForSendAs = null;
         chatFullsForSendAs = new ArrayList<>();
         chatsForSendAs = new ArrayList<>();
-        boolean shouldUpdateSelectedChatAsId = (Calendar.getInstance().get(Calendar.SECOND) - AndroidUtilities.getLastTimeUpdated(String.valueOf(chatId))) > 10;
+        long currentChatId = chatId;
+        boolean shouldUpdateSelectedChatAsId = (Calendar.getInstance().get(Calendar.SECOND) - AndroidUtilities.getLastTimeUpdated(currentAccount, String.valueOf(chatId))) > 10;
         for(int i = 0; i < sendAsPeers.peers.size(); i++) {
             long chatId;
             if (sendAsPeers.peers.get(i).channel_id != 0) {
@@ -1774,7 +1774,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     chatFullsForSendAs.add(chatFull);
                     chatsForSendAs.add(getMessagesController().getChat(chatId));
                 } else {
-                    chatActivityEnterView.setSendMessageAsButtonObject(null);
+                    long invalidateChatId = this.chatId;
+                    AndroidUtilities.runOnUIThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            chatActivityEnterView.setSendMessageAsButtonObject(null);
+                            AndroidUtilities.setChatPeer(currentAccount, String.valueOf(invalidateChatId), null);
+                        }
+                    });
                     return;
                 }
                 processSendAsPeersHandler.post(new Runnable() {
@@ -1795,7 +1802,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                                     } else {
                                         selectedChatIdAsSendAs = sendAsPeers.peers.get(0).channel_id;
                                     }
-                                    AndroidUtilities.setChatPeer(String.valueOf(chatId), selectedChatIdAsSendAs);
+                                    AndroidUtilities.setChatPeer(currentAccount, String.valueOf(currentChatId), selectedChatIdAsSendAs);
                                     chatActivityEnterView.setSendMessageAsButtonObject(getMessagesController().getChat(selectedChatIdAsSendAs));
                                 }
                                 chatActivityEnterView.setSendMessageAsButtonListener(v -> {
@@ -6792,9 +6799,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (currentChat != null && !haveAlreadyCheckedIfSendAsPeers) {
             boolean isSupergroup = (currentChat.megagroup && currentChat.username == null || currentChat.has_geo);
             boolean isDiscussionGroup = currentChat.megagroup && currentChat.has_link;
-            Long chatPeerId = AndroidUtilities.getChatPeer(String.valueOf(chatId));
+            Long chatPeerId = AndroidUtilities.getChatPeer(currentAccount, String.valueOf(chatId));
 
-            if (isSupergroup || isDiscussionGroup && chatPeerId != null) {
+            if ((isSupergroup || isDiscussionGroup) && chatPeerId != null) {
                 // достать с кеша values
                 chatPeer = getMessagesController().getChat(chatPeerId);
                 selectedChatIdAsSendAs = chatPeerId;
@@ -8075,7 +8082,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     if (sendAsPeers != null && chatFull != null) {
                         processSendAsPeers(sendAsPeers, chatFull);
                     } else {
-                        chatActivityEnterView.setSendMessageAsButtonObject(null);
+                        long invalidateChatId = this.chatId;
+                        AndroidUtilities.runOnUIThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                chatActivityEnterView.setSendMessageAsButtonObject(null);
+                                AndroidUtilities.setChatPeer(currentAccount, String.valueOf(invalidateChatId), null);
+                            }
+                        });
                     }
                 });
             }
