@@ -69,7 +69,7 @@ public class SendMessageAsButton extends FrameLayout {
         if (!visible) {
             return 0;
         }
-        return getMeasuredWidth();
+        return AndroidUtilities.dp(48);
     }
 
     @Override

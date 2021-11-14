@@ -1332,10 +1332,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     public ChatActivity(Bundle args) {
         super(args);
     }
-
+    long chatId;
     @Override
     public boolean onFragmentCreate() {
-        final long chatId = arguments.getLong("chat_id", 0);
+        chatId = arguments.getLong("chat_id", 0);
         final long userId = arguments.getLong("user_id", 0);
         final int encId = arguments.getInt("enc_id", 0);
         dialogFolderId = arguments.getInt("dialog_folder_id", 0);
@@ -1453,19 +1453,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             return false;
         }
 
-        if (currentChat != null) {
-            boolean isSupergroup = (currentChat.megagroup && currentChat.username == null || currentChat.has_geo);
-            boolean isDiscussionGroup = currentChat.megagroup && currentChat.has_link;
-            getNotificationCenter().addObserver(this, NotificationCenter.chatPeersLoaded);
-            if (isSupergroup || isDiscussionGroup) {
-                Log.d("sergey", "satisfied");
-                getMessagesController().doSomethingCool(chatId, (sendAsPeers, chatFull) -> {
-                    if (sendAsPeers != null && chatFull != null) {
-                        processSendAsPeers(sendAsPeers, chatFull);
-                    }
-                });
-            }
-        }
         themeDelegate = new ThemeDelegate();
         if (themeDelegate.isThemeChangeAvailable()) {
             NotificationCenter.getGlobalInstance().addObserver(this, NotificationCenter.needSetDayNightTheme);
@@ -1725,6 +1712,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 getMessagesController().saveDefaultSendAs(id, currentChat.id);
                 selectedChatIdAsSendAs = id;
                 chatActivityEnterView.setSendMessageAsButtonChat(getMessagesController().getChat(selectedChatIdAsSendAs));
+                AndroidUtilities.setChatPeer(String.valueOf(chatId), selectedChatIdAsSendAs);
                 closeSendAsChat();
             }
         });
@@ -1771,7 +1759,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         chatsForSendAs = null;
         chatFullsForSendAs = new ArrayList<>();
         chatsForSendAs = new ArrayList<>();
-
+        boolean shouldUpdateSelectedChatAsId = AndroidUtilities.didUpdateChatPeer(String.valueOf(chatId));
         for(int i = 0; i < sendAsPeers.peers.size(); i++) {
             long chatId;
             if (sendAsPeers.peers.get(i).channel_id != 0) {
@@ -1785,6 +1773,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (chatFull != null) {
                     chatFullsForSendAs.add(chatFull);
                     chatsForSendAs.add(getMessagesController().getChat(chatId));
+                } else {
+                    chatActivityEnterView.setSendMessageAsButtonObject(null);
+                    return;
                 }
                 processSendAsPeersHandler.post(new Runnable() {
                     @Override
@@ -1792,18 +1783,22 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         processSendAsPeersSemaphore -= 1;
                         if (processSendAsPeersSemaphore == 0 && chatFullsForSendAs.size() > 1) {
                             AndroidUtilities.runOnUIThread(() -> {
-                                if (peerChatFull.default_send_as != null) {
-                                    if (peerChatFull.default_send_as.channel_id != 0) {
-                                        selectedChatIdAsSendAs = peerChatFull.default_send_as.channel_id;
-                                    } else if(peerChatFull.default_send_as.chat_id != 0) {
-                                        selectedChatIdAsSendAs = peerChatFull.default_send_as.chat_id;
-                                    } else if(peerChatFull.default_send_as.user_id != 0) {
-                                        selectedChatIdAsSendAs = peerChatFull.default_send_as.user_id;
+                                if (shouldUpdateSelectedChatAsId) {
+                                    if (peerChatFull.default_send_as != null) {
+                                        if (peerChatFull.default_send_as.channel_id != 0) {
+                                            selectedChatIdAsSendAs = peerChatFull.default_send_as.channel_id;
+                                        } else if (peerChatFull.default_send_as.chat_id != 0) {
+                                            selectedChatIdAsSendAs = peerChatFull.default_send_as.chat_id;
+                                        } else if (peerChatFull.default_send_as.user_id != 0) {
+                                            selectedChatIdAsSendAs = peerChatFull.default_send_as.user_id;
+                                        }
+                                    } else {
+                                        selectedChatIdAsSendAs = sendAsPeers.peers.get(0).channel_id;
                                     }
-                                } else {
-                                 selectedChatIdAsSendAs = sendAsPeers.peers.get(0).channel_id;
+                                    AndroidUtilities.setChatPeer(String.valueOf(chatId), selectedChatIdAsSendAs);
+                                    chatActivityEnterView.setSendMessageAsButtonObject(getMessagesController().getChat(selectedChatIdAsSendAs));
                                 }
-                                chatActivityEnterView.addSendMessageAsButton(getMessagesController().getChat(selectedChatIdAsSendAs), v -> {
+                                chatActivityEnterView.setSendMessageAsButtonListener(v -> {
                                     switchSelectingSendAsChat();
                                 });
                             });
@@ -6793,8 +6788,20 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         bottomMessagesActionContainer.setPadding(0, AndroidUtilities.dp(2), 0, 0);
         contentView.addView(bottomMessagesActionContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 51, Gravity.BOTTOM));
         bottomMessagesActionContainer.setOnTouchListener((v, event) -> true);
+        Object chatPeer = null;
+        if (currentChat != null && !haveAlreadyCheckedIfSendAsPeers) {
+            boolean isSupergroup = (currentChat.megagroup && currentChat.username == null || currentChat.has_geo);
+            boolean isDiscussionGroup = currentChat.megagroup && currentChat.has_link;
+            Long chatPeerId = AndroidUtilities.getChatPeer(String.valueOf(chatId));
 
-        chatActivityEnterView = new ChatActivityEnterView(getParentActivity(), contentView, this, true, themeDelegate) {
+            if (isSupergroup || isDiscussionGroup && chatPeerId != null) {
+                // достать с кеша values
+                chatPeer = getMessagesController().getChat(chatPeerId);
+                selectedChatIdAsSendAs = chatPeerId;
+            }
+        }
+
+        chatActivityEnterView = new ChatActivityEnterView(getParentActivity(), contentView, this, true, themeDelegate, chatPeer) {
 
             int lastContentViewHeight;
             int messageEditTextPredrawHeigth;
@@ -8057,10 +8064,33 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             topBottom[1] = chatListView.getBottom();
             topBottom[0] = chatListView.getTop() + chatListViewPaddingTop - AndroidUtilities.dp(4);
         });
+        AndroidUtilities.runOnUIThread(new Runnable() {
+            @Override
+            public void run() {
+                if (currentChat != null && !haveAlreadyCheckedIfSendAsPeers) {
+                    haveAlreadyCheckedIfSendAsPeers = true;
+                    boolean isSupergroup = (currentChat.megagroup && currentChat.username == null || currentChat.has_geo);
+                    boolean isDiscussionGroup = currentChat.megagroup && currentChat.has_link;
+//                    getNotificationCenter().addObserver(this, NotificationCenter.chatPeersLoaded);
+                    if (isSupergroup || isDiscussionGroup) {
+                        Log.d("sergey", "satisfied");
+                        getMessagesController().doSomethingCool(chatId, (sendAsPeers, chatFull) -> {
+                            if (sendAsPeers != null && chatFull != null) {
+                                processSendAsPeers(sendAsPeers, chatFull);
+                            } else {
+                                chatActivityEnterView.setSendMessageAsButtonObject(null);
+                            }
+                        });
+                    }
+                }
+            }
+        }, 3000);
 
         emojiAnimationsOverlay = new EmojiAnimationsOverlay(ChatActivity.this, contentView, chatListView, currentAccount, dialog_id, threadMessageId);
         return fragmentView;
     }
+
+    boolean haveAlreadyCheckedIfSendAsPeers = false;
 
     private void openForwardingPreview() {
         boolean keyboardVisible = chatActivityEnterView.isKeyboardVisible();

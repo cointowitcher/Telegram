@@ -67,6 +67,7 @@ import android.text.method.LinkMovementMethod;
 import android.text.style.URLSpan;
 import android.text.util.Linkify;
 import android.util.DisplayMetrics;
+import android.util.Pair;
 import android.util.StateSet;
 import android.util.TypedValue;
 import android.view.ContextThemeWrapper;
@@ -150,6 +151,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -3216,6 +3218,31 @@ public class AndroidUtilities {
         } catch (Exception ignore) {
         }
         return null;
+    }
+
+    public static Long getChatPeer(String key) {
+        SharedPreferences peersArray = ApplicationLoader.applicationContext.getSharedPreferences("chatPeersArray", Context.MODE_PRIVATE);
+        long value = peersArray.getLong(key, 0);
+        if (value == 0) {
+            return null;
+        } else {
+            return value;
+        }
+    }
+
+    public static void setChatPeer(String key, long peer) {
+        SharedPreferences peersArray = ApplicationLoader.applicationContext.getSharedPreferences("chatPeersArray", Context.MODE_PRIVATE);
+        peersArray.edit().putLong(key, peer).apply();
+    }
+
+    public static void updateChatPeer(String key, boolean edited) {
+        SharedPreferences peersUpdates = ApplicationLoader.applicationContext.getSharedPreferences("chatPeersArrayUpdate", Context.MODE_PRIVATE);
+        peersUpdates.edit().putBoolean(key, edited).apply();
+    }
+
+    public static boolean didUpdateChatPeer(String key) {
+        SharedPreferences peersUpdates = ApplicationLoader.applicationContext.getSharedPreferences("chatPeersArrayUpdate", Context.MODE_PRIVATE);
+        return peersUpdates.getBoolean(key, true);
     }
 
     public static void fixGoogleMapsBug() { //https://issuetracker.google.com/issues/154855417#comment301

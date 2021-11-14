@@ -1654,7 +1654,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     }
 
     public ChatActivityEnterView(Activity context, SizeNotifierFrameLayout parent, ChatActivity fragment, final boolean isChat) {
-        this(context, parent, fragment, isChat, null);
+        this(context, parent, fragment, isChat, null, null);
     }
 
     protected Long getSendAsId() {
@@ -1662,10 +1662,17 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    public ChatActivityEnterView(Activity context, SizeNotifierFrameLayout parent, ChatActivity fragment, final boolean isChat, Theme.ResourcesProvider resourcesProvider) {
+    public ChatActivityEnterView(Activity context, SizeNotifierFrameLayout parent, ChatActivity fragment, final boolean isChat, Theme.ResourcesProvider resourcesProvider, Object object) {
         super(context);
         this.resourcesProvider = resourcesProvider;
-
+        sendMessageAsButton = new SendMessageAsButton(context, resourcesProvider);
+        if (object != null) {
+            sendMessageAsButton.setVisible(true);
+            sendMessageAsButton.setObject(object);
+            requestLayout();
+        } else {
+            sendMessageAsButton.setVisible(false);
+        }
         smoothKeyboard = isChat && SharedConfig.smoothKeyboard && !AndroidUtilities.isInMultiwindow && (fragment == null || !fragment.isInBubbleMode());
         dotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         dotPaint.setColor(getThemedColor(Theme.key_chat_emojiPanelNewTrending));
@@ -1741,9 +1748,6 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         };
         frameLayout.setClipChildren(false);
         textFieldContainer.addView(frameLayout, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM, 0, 0, 48, 0));
-
-        sendMessageAsButton = new SendMessageAsButton(context, resourcesProvider);
-        sendMessageAsButton.setVisible(false);
         frameLayout.addView(sendMessageAsButton, LayoutHelper.createFrame(48, 48, Gravity.BOTTOM | Gravity.LEFT, 3, 0, 0, 0));
 
         for (int a = 0; a < 2; a++) {
@@ -1763,6 +1767,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             if (Build.VERSION.SDK_INT >= 21) {
                 emojiButton[a].setBackgroundDrawable(Theme.createSelectorDrawable(getThemedColor(Theme.key_listSelector)));
             }
+
             frameLayout.addView(emojiButton[a], LayoutHelper.createFrame(48, 48, Gravity.BOTTOM | Gravity.LEFT, 3, 0, 0, 0));
             emojiButton[a].setOnClickListener(view -> {
                 if (adjustPanLayoutHelper != null && adjustPanLayoutHelper.animationInProgress()) {
@@ -8426,32 +8431,25 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         sendMessageAsButton.setObject(chat);
     }
 
-    public void addSendMessageAsButton(Object chat, OnClickListener callback) {
+    public void setSendMessageAsButtonListener(OnClickListener callback) {
+        sendMessageAsButton.setOnClickListener(callback);
+    }
+
+    public void setSendMessageAsButtonObject(Object chat) {
+        if (chat == null) {
+            sendMessageAsButton.setVisible(false);
+            requestLayout();
+            return;
+        }
+        sendMessageAsButton.setObject(chat);
         if (sendMessageAsButton.getVisible()) {
             return;
         }
         sendMessageAsButton.setVisible(true);
-        sendMessageAsButton.setObject(chat);
         sendMessageAsButton.setChecked(false, false);
-        sendMessageAsButton.setOnClickListener(callback);
         requestLayout();
-//        addSendAsButtonAnimation = new AnimatorSet();
-//        addSendAsButtonAnimation.playTogether(ObjectAnimator.ofFloat(emojiButton[0], View.TRANSLATION_X, sendMessageAsButton.getPossibleWidth(), 0));
-//        addSendAsButtonAnimation.playTogether(ObjectAnimator.ofFloat(emojiButton[1], View.TRANSLATION_X, sendMessageAsButton.getPossibleWidth(), 0));
-//        addSendAsButtonAnimation.playTogether(ObjectAnimator.ofFloat(messageEditText, View.TRANSLATION_X, sendMessageAsButton.getPossibleWidth(), 0));
-//        addSendAsButtonAnimation.setInterpolator(AdjustPanLayoutHelper.keyboardInterpolator);
-//        addSendAsButtonAnimation.setDuration(AdjustPanLayoutHelper.keyboardDuration);
-//        addSendAsButtonAnimation.addListener(new AnimatorListenerAdapter() {
-//            @Override
-//            public void onAnimationEnd(Animator animation) {
-//                requestLayout();
-//                addSendAsButtonAnimation = null;
-//                NotificationCenter.getInstance(currentAccount).onAnimationFinish(notificationsIndex);
-//            }
-//        });
-//        AndroidUtilities.runOnUIThread(runAddSendAsButtonAnimation, 50);
-//        notificationsIndex = NotificationCenter.getInstance(currentAccount).setAnimationInProgress(notificationsIndex, null);
     }
+
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         if (botCommandsMenuButton != null && botCommandsMenuButton.getTag() != null) {
