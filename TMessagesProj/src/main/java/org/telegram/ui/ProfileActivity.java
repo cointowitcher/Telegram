@@ -1925,6 +1925,9 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             @Override
             protected void showHintRestricted(View view) {
                 ActionBarMenuItem actionBarMenuItem = (ActionBarMenuItem) view;
+                if (pa == null || pa.fragmentView == null) {
+                    return;
+                }
                 FrameLayout frameLayout = (FrameLayout) pa.fragmentView;
                 if (pa.hintRestricted == null) {
                     pa.hintRestricted = new HintView(getParentActivity(), 9, false);
