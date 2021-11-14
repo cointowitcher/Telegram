@@ -41,7 +41,7 @@ public class SendMessageAsListCell extends FrameLayout {
             @Override
             public void onActionUp(View view, MotionEvent motionEvent) {
                 setBackgroundColor(0x00000000);
-                if ((motionEvent.getActionMasked() & MotionEvent.ACTION_CANCEL) == 0) {
+                if ((motionEvent.getActionMasked() & MotionEvent.ACTION_CANCEL) != MotionEvent.ACTION_CANCEL) {
                     delegate.onSelected(chatId);
                 }
             }

@@ -1816,14 +1816,19 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }, chatId);
         }
     }
-
+    boolean isClosingSendAsChat = false;
     private void closeSendAsChat() {
+        if (isClosingSendAsChat) {
+            return;
+        }
+        isClosingSendAsChat = true;
         isSelectingSendAsChat = false;
         chatActivityEnterView.toggleSendMessageAsButton(isSelectingSendAsChat);
         if (sendMessageAsListView != null) {
             sendMessageAsListView.hide(new SendMessageAsListView.Callback() {
                 @Override
                 public void callback() {
+                    isClosingSendAsChat = false;
                     if (sendMessageAsListView != null) {
                         ((ViewGroup) sendMessageAsListView.getParent()).removeView(sendMessageAsListView);
                         sendMessageAsListView = null;
@@ -21596,6 +21601,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             return false;
         } else if (chatActivityEnterView != null && chatActivityEnterView.botCommandsMenuIsShowing()) {
             chatActivityEnterView.hideBotCommands();
+            return false;
+        } else if (sendMessageAsListView != null) {
+            closeSendAsChat();
             return false;
         }
         if (backToPreviousFragment != null) {
