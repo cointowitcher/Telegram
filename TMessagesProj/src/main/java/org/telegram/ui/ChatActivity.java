@@ -6806,7 +6806,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         bottomMessagesActionContainer.setOnTouchListener((v, event) -> true);
         Object chatPeer = null;
         if (currentChat != null && !haveAlreadyCheckedIfSendAsPeers) {
-            boolean isSupergroup = (currentChat.megagroup && currentChat.username == null || currentChat.has_geo);
+            boolean isSupergroup = ((currentChat.megagroup && currentChat.username == null) || currentChat.has_geo);
             boolean isDiscussionGroup = currentChat.megagroup && currentChat.has_link;
             Long chatPeerId = AndroidUtilities.getChatPeer(currentAccount, String.valueOf(chatId));
 
@@ -8103,7 +8103,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 //                    getNotificationCenter().addObserver(this, NotificationCenter.chatPeersLoaded);
             if (isSupergroup || isDiscussionGroup) {
                 Log.d("sergey", "satisfied");
-                getMessagesController().doSomethingCool(chatId, (sendAsPeers, chatFull) -> {
+                getMessagesController().doSomethingCool(this.chatId, (sendAsPeers, chatFull) -> {
                     if (sendAsPeers != null && chatFull != null) {
                         processSendAsPeers(sendAsPeers, chatFull);
                     } else {
@@ -8111,6 +8111,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         AndroidUtilities.runOnUIThread(new Runnable() {
                             @Override
                             public void run() {
+                                if (chatActivityEnterView == null) {
+                                    return;
+                                }
                                 chatActivityEnterView.setSendMessageAsButtonObject(null);
                                 AndroidUtilities.setChatPeer(currentAccount, String.valueOf(invalidateChatId), null);
                             }

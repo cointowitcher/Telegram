@@ -4904,6 +4904,8 @@ public class MessagesController extends BaseController implements NotificationCe
                     TLRPC.TL_channels_sendAsPeers sendAsPeers = (TLRPC.TL_channels_sendAsPeers) response;
                     callback.didGetPeers(sendAsPeers, chatFull);
                     Log.d("sergey", "tpr");
+                } else {
+                    callback.didGetPeers(null, null);
                 }
             });
         }, chatId);
