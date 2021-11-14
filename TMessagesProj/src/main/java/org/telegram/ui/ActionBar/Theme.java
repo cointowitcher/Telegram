@@ -3442,6 +3442,8 @@ public class Theme {
     public static final String key_chat_inTextSelectionHighlight = "chat_inTextSelectionHighlight";
     public static final String key_chat_recordedVoiceHighlight = "key_chat_recordedVoiceHighlight";
     public static final String key_chat_TextSelectionCursor = "chat_TextSelectionCursor";
+    public static final String key_chat_sendAsButtonColor = "chat_sendAsButtonColor";
+    public static final String key_chat_sendMessageAsTitleColor = "chat_sendMessageAsTitleColor";
 
     public static final String key_voipgroup_listSelector = "voipgroup_listSelector";
     public static final String key_voipgroup_inviteMembersBackground = "voipgroup_inviteMembersBackground";
@@ -4424,6 +4426,8 @@ public class Theme {
         defaultColors.put(key_chat_outTextSelectionHighlight, 0x2E3F9923);
         defaultColors.put(key_chat_inTextSelectionHighlight, 0x5062A9E3);
         defaultColors.put(key_chat_TextSelectionCursor, 0xFF419FE8);
+        defaultColors.put(key_chat_sendAsButtonColor, 0xFF50A7EA);
+        defaultColors.put(key_chat_sendMessageAsTitleColor, 0xFF3995D4);
 
         defaultColors.put(key_statisticChartSignature, 0x7f252529);
         defaultColors.put(key_statisticChartSignatureAlpha, 0x7f252529);
@@ -4652,6 +4656,7 @@ public class Theme {
 
         fallbackKeys.put(key_returnToCallMutedBackground, key_windowBackgroundWhite);
         fallbackKeys.put(key_dialogSwipeRemove, key_avatar_backgroundRed);
+        fallbackKeys.put(key_chat_sendAsButtonColor, key_changephoneinfo_image2);
 
         themeAccentExclusionKeys.addAll(Arrays.asList(keys_avatar_background));
         themeAccentExclusionKeys.addAll(Arrays.asList(keys_avatar_nameInMessage));

@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.MemberRequestCell;
 
 import java.util.Random;
@@ -55,13 +56,13 @@ public class SendMessageAsListCell extends FrameLayout {
         addView(avatarImageView, LayoutHelper.createFrame(41, 41, Gravity.TOP | Gravity.LEFT, 9.82f, 9.82f, 0, 0));
 
         topTextView = new TextView(context);
-        topTextView.setTextColor(0xff222222);
+        topTextView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
         topTextView.setTextSize(17.45f);
         topTextView.setLines(1);
         addView(topTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.LEFT, 65.46f, 8, 0, 0));
 
         bottomTextView = new TextView(context);
-        bottomTextView.setTextColor(0xff8a8a8a);
+        bottomTextView.setTextColor(Theme.getColor(Theme.key_chat_emojiPanelTrendingDescription));
         bottomTextView.setTextSize(14.19f);
         addView(bottomTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.LEFT, 65.46f, 34.19f, 0, 0));
     }

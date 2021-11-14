@@ -30,7 +30,7 @@ public class SendMessageAsButton extends FrameLayout {
         checkBox2.setDrawUnchecked(false);
         checkBox2.setDrawBackgroundAsArc(3);
         addView(checkBox2);
-        checkBox2.checkBoxBase.backgroundColorKey = Theme.key_voipgroup_overlayBlue1;
+        checkBox2.checkBoxBase.backgroundColorKey = Theme.key_chat_sendAsButtonColor;
         checkBox2.checkBoxBase.background2ColorKey = null;
     }
 

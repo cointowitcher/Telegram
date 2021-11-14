@@ -39,7 +39,7 @@ public class SendMessageAsListScrollView extends FrameLayout {
 
     public void setup() {
         background = new GradientDrawable();
-        background.setColor(0xffffffff);
+        background.setColor(Theme.getColor(Theme.key_dialogBackground));
         background.setCornerRadius(AndroidUtilities.dp(5.8f));
         setBackground(background);
         frameLayout = new FrameLayout(getContext());
@@ -47,7 +47,7 @@ public class SendMessageAsListScrollView extends FrameLayout {
 
         sendMessageAsTextView = new TextView(getContext());
         sendMessageAsTextView.setText(LocaleController.getString("SendMessageAs", R.string.SendMessageAs));
-        sendMessageAsTextView.setTextColor(0xff5493cf);
+        sendMessageAsTextView.setTextColor(Theme.getColor(Theme.key_chat_sendMessageAsTitleColor));
         sendMessageAsTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16.36f);
         frameLayout.addView(sendMessageAsTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT,LayoutHelper.WRAP_CONTENT, Gravity.TOP, 17.45f, 17.45f, 0, 0));
 
