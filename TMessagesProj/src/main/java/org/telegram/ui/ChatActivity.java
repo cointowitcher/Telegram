@@ -1759,7 +1759,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         chatsForSendAs = null;
         chatFullsForSendAs = new ArrayList<>();
         chatsForSendAs = new ArrayList<>();
-        boolean shouldUpdateSelectedChatAsId = AndroidUtilities.didUpdateChatPeer(String.valueOf(chatId));
+        boolean shouldUpdateSelectedChatAsId = (Calendar.getInstance().get(Calendar.SECOND) - AndroidUtilities.getLastTimeUpdated(String.valueOf(chatId))) > 10;
         for(int i = 0; i < sendAsPeers.peers.size(); i++) {
             long chatId;
             if (sendAsPeers.peers.get(i).channel_id != 0) {
@@ -8064,27 +8064,22 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             topBottom[1] = chatListView.getBottom();
             topBottom[0] = chatListView.getTop() + chatListViewPaddingTop - AndroidUtilities.dp(4);
         });
-        AndroidUtilities.runOnUIThread(new Runnable() {
-            @Override
-            public void run() {
-                if (currentChat != null && !haveAlreadyCheckedIfSendAsPeers) {
-                    haveAlreadyCheckedIfSendAsPeers = true;
-                    boolean isSupergroup = (currentChat.megagroup && currentChat.username == null || currentChat.has_geo);
-                    boolean isDiscussionGroup = currentChat.megagroup && currentChat.has_link;
+        if (currentChat != null && !haveAlreadyCheckedIfSendAsPeers) {
+            haveAlreadyCheckedIfSendAsPeers = true;
+            boolean isSupergroup = (currentChat.megagroup && currentChat.username == null || currentChat.has_geo);
+            boolean isDiscussionGroup = currentChat.megagroup && currentChat.has_link;
 //                    getNotificationCenter().addObserver(this, NotificationCenter.chatPeersLoaded);
-                    if (isSupergroup || isDiscussionGroup) {
-                        Log.d("sergey", "satisfied");
-                        getMessagesController().doSomethingCool(chatId, (sendAsPeers, chatFull) -> {
-                            if (sendAsPeers != null && chatFull != null) {
-                                processSendAsPeers(sendAsPeers, chatFull);
-                            } else {
-                                chatActivityEnterView.setSendMessageAsButtonObject(null);
-                            }
-                        });
+            if (isSupergroup || isDiscussionGroup) {
+                Log.d("sergey", "satisfied");
+                getMessagesController().doSomethingCool(chatId, (sendAsPeers, chatFull) -> {
+                    if (sendAsPeers != null && chatFull != null) {
+                        processSendAsPeers(sendAsPeers, chatFull);
+                    } else {
+                        chatActivityEnterView.setSendMessageAsButtonObject(null);
                     }
-                }
+                });
             }
-        }, 3000);
+        }
 
         emojiAnimationsOverlay = new EmojiAnimationsOverlay(ChatActivity.this, contentView, chatListView, currentAccount, dialog_id, threadMessageId);
         return fragmentView;

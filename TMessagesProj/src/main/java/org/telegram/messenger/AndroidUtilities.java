@@ -3232,17 +3232,12 @@ public class AndroidUtilities {
 
     public static void setChatPeer(String key, long peer) {
         SharedPreferences peersArray = ApplicationLoader.applicationContext.getSharedPreferences("chatPeersArray", Context.MODE_PRIVATE);
-        peersArray.edit().putLong(key, peer).apply();
+        peersArray.edit().putLong(key, peer).putInt(key + "upd", Calendar.getInstance().get(Calendar.SECOND)).apply();
     }
 
-    public static void updateChatPeer(String key, boolean edited) {
-        SharedPreferences peersUpdates = ApplicationLoader.applicationContext.getSharedPreferences("chatPeersArrayUpdate", Context.MODE_PRIVATE);
-        peersUpdates.edit().putBoolean(key, edited).apply();
-    }
-
-    public static boolean didUpdateChatPeer(String key) {
-        SharedPreferences peersUpdates = ApplicationLoader.applicationContext.getSharedPreferences("chatPeersArrayUpdate", Context.MODE_PRIVATE);
-        return peersUpdates.getBoolean(key, true);
+    public static int getLastTimeUpdated(String key) {
+        SharedPreferences peersArray = ApplicationLoader.applicationContext.getSharedPreferences("chatPeersArray", Context.MODE_PRIVATE);
+        return peersArray.getInt(key + "upd", 0);
     }
 
     public static void fixGoogleMapsBug() { //https://issuetracker.google.com/issues/154855417#comment301

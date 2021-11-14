@@ -5610,11 +5610,9 @@ public class MessagesController extends BaseController implements NotificationCe
         TLRPC.TL_messages_saveDefaultSendAs req = new TLRPC.TL_messages_saveDefaultSendAs();
         req.send_as = getInputPeer(getChat(chatId));
         req.peer = getInputPeer(getChat(originalId));
-        AndroidUtilities.updateChatPeer(String.valueOf(chatId), false);
         getConnectionsManager().sendRequest(req, (response, error) -> {
             if (error == null) {
                 Log.d("sergey","saveDefaultSendAs cool");
-                AndroidUtilities.updateChatPeer(String.valueOf(chatId), true);
             } else {
                 Log.d("sergey","saveDefaultSendAs not cool");
             }
