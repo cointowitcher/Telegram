@@ -50,6 +50,11 @@ public class HintView extends FrameLayout {
     private long showingDuration = 2000;
     private final Theme.ResourcesProvider resourcesProvider;
 
+    public interface OnHide {
+        public void onHide();
+    }
+    public OnHide onHide;
+
     public HintView(Context context, int type) {
         this(context, type, false, null);
     }
@@ -456,6 +461,9 @@ public class HintView extends FrameLayout {
                 currentView = null;
                 messageCell = null;
                 animatorSet = null;
+                if (onHide != null) {
+                    onHide.onHide();
+                }
             }
         });
         animatorSet.setDuration(300);

@@ -9617,7 +9617,24 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 return;
             }
             voiceHintTextView = new HintView(getParentActivity(), 9, themeDelegate);
-            frameLayout.addView(voiceHintTextView, index + 1,  LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP, 10, 0, 10, 0));
+            voiceHintTextView.onHide = new HintView.OnHide() {
+                @Override
+                public void onHide() {
+                    if (voiceHintTextView == null) {
+                        return;
+                    }
+                    FrameLayout parent = (FrameLayout)voiceHintTextView.getParent();
+                    if (parent != null) {
+                        parent.removeView(voiceHintTextView);
+                        voiceHintTextView = null;
+                    }
+                }
+            };
+            if (sendMessageAsListView != null) {
+                sendMessageAsListView.addView(voiceHintTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP, 10, 0, 10, 0));
+            } else {
+                frameLayout.addView(voiceHintTextView, index + 1,  LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP, 10, 0, 10, 0));
+            }
         }
         if (hide) {
             voiceHintTextView.hide();

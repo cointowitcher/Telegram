@@ -2534,7 +2534,6 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         recordedAudioPlayButton.setContentDescription(LocaleController.getString("AccActionPlay", R.string.AccActionPlay));
         recordedAudioPanel.addView(recordedAudioPlayButton, LayoutHelper.createFrame(48, 48, Gravity.LEFT | Gravity.BOTTOM, 48, 0, 13, 0));
         recordedAudioPlayButton.setOnClickListener(v -> {
-            tryOpenEmojis.recordAudio();
             if (audioToSend == null) {
                 return;
             }
