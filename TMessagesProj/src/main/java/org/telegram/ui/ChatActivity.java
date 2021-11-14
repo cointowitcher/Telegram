@@ -6977,6 +6977,12 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
                 return true;
             }
+            @Override
+            public void recordAudio() {
+                if (sendMessageAsListView != null) {
+                    closeSendAsChat();
+                }
+            }
         };
         chatActivityEnterView.setDelegate(new ChatActivityEnterView.ChatActivityEnterViewDelegate() {
 

@@ -2534,6 +2534,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         recordedAudioPlayButton.setContentDescription(LocaleController.getString("AccActionPlay", R.string.AccActionPlay));
         recordedAudioPanel.addView(recordedAudioPlayButton, LayoutHelper.createFrame(48, 48, Gravity.LEFT | Gravity.BOTTOM, 48, 0, 13, 0));
         recordedAudioPlayButton.setOnClickListener(v -> {
+            tryOpenEmojis.recordAudio();
             if (audioToSend == null) {
                 return;
             }
@@ -3973,7 +3974,14 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     ObjectAnimator.ofFloat(messageEditText, View.ALPHA, 1f),
                     ObjectAnimator.ofFloat(messageEditText, View.TRANSLATION_X, 0)
             );
-
+            sendMessageAsButton.setAlpha(0f);
+            sendMessageAsButton.setScaleX(0f);
+            sendMessageAsButton.setScaleY(0f);
+            recordPannelAnimation.playTogether(
+                    ObjectAnimator.ofFloat(sendMessageAsButton, View.ALPHA, 1.0f),
+                    ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_X, 1.0f),
+                    ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_Y, 1.0f)
+            );
             if (botCommandsMenuButton != null) {
                 botCommandsMenuButton.setAlpha(0f);
                 botCommandsMenuButton.setScaleY(0);
@@ -4048,7 +4056,14 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             emojiButton[1].setScaleY(0);
 
             AnimatorSet iconsEndAnimator = new AnimatorSet();
-
+            sendMessageAsButton.setAlpha(0f);
+            sendMessageAsButton.setScaleX(0f);
+            sendMessageAsButton.setScaleY(0f);
+            iconsEndAnimator.playTogether(
+                    ObjectAnimator.ofFloat(sendMessageAsButton, View.ALPHA, 1.0f),
+                    ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_X, 1.0f),
+                    ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_Y, 1.0f)
+                    );
             iconsEndAnimator.playTogether(
                     ObjectAnimator.ofFloat(recordDeleteImageView, View.ALPHA, 0.0f),
                     ObjectAnimator.ofFloat(recordDeleteImageView, View.SCALE_X, 0.0f),
@@ -5056,6 +5071,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             if (recordInterfaceState == 1) {
                 return;
             }
+            if (tryOpenEmojis != null) {
+                tryOpenEmojis.recordAudio();
+            }
             recordInterfaceState = 1;
             if (emojiView != null) {
                 emojiView.setEnabled(false);
@@ -5122,6 +5140,11 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     ObjectAnimator.ofFloat(recordTimerView, View.ALPHA, 1),
                     ObjectAnimator.ofFloat(slideText, View.TRANSLATION_X, 0),
                     ObjectAnimator.ofFloat(slideText, View.ALPHA, 1)
+            );
+            iconChanges.playTogether(
+                    ObjectAnimator.ofFloat(sendMessageAsButton, View.ALPHA, 0),
+                    ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_X, 0),
+                    ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_Y, 0)
             );
             if (audioSendButton != null) {
                 iconChanges.playTogether(ObjectAnimator.ofFloat(audioSendButton, View.ALPHA, 0));
@@ -5236,6 +5259,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                         ObjectAnimator.ofFloat(emojiButton[1], View.SCALE_Y, 1),
                         ObjectAnimator.ofFloat(emojiButton[1], View.SCALE_X, 1),
                         ObjectAnimator.ofFloat(emojiButton[1], View.ALPHA, 1),
+                        ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_Y, 1),
+                        ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_X, 1),
+                        ObjectAnimator.ofFloat(sendMessageAsButton, View.ALPHA, 1),
                         ObjectAnimator.ofFloat(recordDot, View.SCALE_Y, 0),
                         ObjectAnimator.ofFloat(recordDot, View.SCALE_X, 0),
                         ObjectAnimator.ofFloat(recordCircle, recordCircleScale, 0.0f),
@@ -5280,6 +5306,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                 recordIsCanceled = true;
                 runningAnimationAudio.setDuration(150);
             } else if (recordState == RECORD_STATE_PREPARING) {
+                if (tryOpenEmojis != null) {
+                    tryOpenEmojis.recordAudio();
+                }
                 slideText.setEnabled(false);
                 if (isInVideoMode()) {
                     recordedAudioBackground.setVisibility(GONE);
@@ -5364,6 +5393,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                         ObjectAnimator.ofFloat(emojiButton[1], View.SCALE_Y, 0),
                         ObjectAnimator.ofFloat(emojiButton[1], View.SCALE_X, 0),
                         ObjectAnimator.ofFloat(emojiButton[1], View.ALPHA, 0),
+                        ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_Y, 0),
+                        ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_X, 0),
+                        ObjectAnimator.ofFloat(sendMessageAsButton, View.ALPHA, 0),
                         ObjectAnimator.ofFloat(messageEditText, View.ALPHA, 0)
                 );
                 if (videoSendButton != null) {
@@ -5448,6 +5480,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                             emojiButton[i].setScaleX(0f);
                             emojiButton[i].setAlpha(0f);
                         }
+                        sendMessageAsButton.setScaleY(0f);
+                        sendMessageAsButton.setScaleX(0f);
+                        sendMessageAsButton.setAlpha(0f);
                         if (botCommandsMenuButton != null) {
                             botCommandsMenuButton.setAlpha(0f);
                             botCommandsMenuButton.setScaleX(0f);
@@ -5471,6 +5506,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                         ObjectAnimator.ofFloat(emojiButton[1], View.SCALE_Y, 1),
                         ObjectAnimator.ofFloat(emojiButton[1], View.SCALE_X, 1),
                         ObjectAnimator.ofFloat(emojiButton[1], View.ALPHA, 1),
+                        ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_Y, 1),
+                        ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_X, 1),
+                        ObjectAnimator.ofFloat(sendMessageAsButton, View.ALPHA, 1),
                         ObjectAnimator.ofFloat(recordDot, View.SCALE_Y, 0),
                         ObjectAnimator.ofFloat(recordDot, View.SCALE_X, 0)
                 );
@@ -5627,6 +5665,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                         ObjectAnimator.ofFloat(emojiButton[1], View.SCALE_Y, 1),
                         ObjectAnimator.ofFloat(emojiButton[1], View.SCALE_X, 1),
                         ObjectAnimator.ofFloat(emojiButton[1], View.ALPHA, 1),
+                        ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_Y, 1),
+                        ObjectAnimator.ofFloat(sendMessageAsButton, View.SCALE_X, 1),
+                        ObjectAnimator.ofFloat(sendMessageAsButton, View.ALPHA, 1),
                         ObjectAnimator.ofFloat(recordDot, View.SCALE_Y, 0),
                         ObjectAnimator.ofFloat(recordDot, View.SCALE_X, 0),
                         ObjectAnimator.ofFloat(audioVideoButtonContainer, View.ALPHA, 1.0f)
@@ -6021,6 +6062,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         for (int i = 0; i < 2; ++i) {
             emojiButton[i].setColorFilter(new PorterDuffColorFilter(getThemedColor(Theme.key_chat_messagePanelIcons), PorterDuff.Mode.MULTIPLY));
         }
+        // SERTODO: update colors
     }
 
     private void updateRecordedDeleteIconColors() {
@@ -8590,5 +8632,6 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 
     public interface TryOpenEmojis {
         boolean openEmojisTab();
+        void recordAudio();
     }
 }
