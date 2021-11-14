@@ -1770,6 +1770,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 
             frameLayout.addView(emojiButton[a], LayoutHelper.createFrame(48, 48, Gravity.BOTTOM | Gravity.LEFT, 3, 0, 0, 0));
             emojiButton[a].setOnClickListener(view -> {
+                if (tryOpenEmojis != null && !tryOpenEmojis.openEmojisTab()) {
+                    return;
+                }
                 if (adjustPanLayoutHelper != null && adjustPanLayoutHelper.animationInProgress()) {
                     return;
                 }
@@ -8581,5 +8584,11 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     private Paint getThemedPaint(String paintKey) {
         Paint paint = resourcesProvider != null ? resourcesProvider.getPaint(paintKey) : null;
         return paint != null ? paint : Theme.getThemePaint(paintKey);
+    }
+
+    public TryOpenEmojis tryOpenEmojis;
+
+    public interface TryOpenEmojis {
+        boolean openEmojisTab();
     }
 }

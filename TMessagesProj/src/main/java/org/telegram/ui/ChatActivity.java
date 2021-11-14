@@ -1850,6 +1850,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private void switchSelectingSendAsChat() {
 //        popupWindow
         if (!isSelectingSendAsChat) {
+            if (chatActivityEnterView != null && chatActivityEnterView.isPopupShowing()) {
+                chatActivityEnterView.hidePopup(false);
+                return;
+            }
             openSendAsChat();
         } else {
             closeSendAsChat();
@@ -6962,6 +6966,16 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     contentView.invalidate();
                     chatActivityEnterViewAnimateFromTop = chatActivityEnterView.getBackgroundTop();
                 }
+            }
+        };
+        chatActivityEnterView.tryOpenEmojis = new ChatActivityEnterView.TryOpenEmojis() {
+            @Override
+            public boolean openEmojisTab() {
+                if (sendMessageAsListView != null) {
+                    closeSendAsChat();
+                    return false;
+                }
+                return true;
             }
         };
         chatActivityEnterView.setDelegate(new ChatActivityEnterView.ChatActivityEnterViewDelegate() {
