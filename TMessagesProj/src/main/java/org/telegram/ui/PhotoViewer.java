@@ -371,7 +371,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     private boolean openedFullScreenVideo;
     private boolean dontChangeCaptionPosition;
     private boolean captionHwLayerEnabled;
-    private boolean noforwards;
+    private boolean noforwards = false;
 
     private Paint bitmapPaint = new Paint(Paint.FILTER_BITMAP_FLAG);
 
@@ -9824,7 +9824,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         menuItem.showSubItem(gallery_menu_showinchat);
                         menuItem.showSubItem(gallery_menu_showall);
                     }
-                    if (!noforwards) {
+                    if (!noforwards && sendItem != null) {
                         setItemVisible(sendItem, true, false);
                     }
                 } else if (isEmbedVideo && messageObject.eventId == 0 && !noforwards) {
@@ -10007,15 +10007,19 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 timeItem.setVisibility(View.VISIBLE);
             }
         }
-        if (noforwards) {
-            shareButton.setVisibility(View.GONE);
-        } else {
-            shareButton.setVisibility(View.VISIBLE);
+        if (shareButton != null) {
+            if (noforwards) {
+                shareButton.setVisibility(View.GONE);
+            } else {
+                shareButton.setVisibility(View.VISIBLE);
+            }
         }
-        if (menuItem.anyVisible()) {
-            menuItem.setVisibility(View.VISIBLE);
-        } else {
-            menuItem.setVisibility(View.GONE);
+        if (menuItem != null) {
+            if (menuItem.anyVisible()) {
+                menuItem.setVisibility(View.VISIBLE);
+            } else {
+                menuItem.setVisibility(View.GONE);
+            }
         }
         checkFullscreenButton();
     }

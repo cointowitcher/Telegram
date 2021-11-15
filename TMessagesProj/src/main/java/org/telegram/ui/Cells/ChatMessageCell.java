@@ -610,7 +610,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     public boolean isThreadChat;
     public boolean hasDiscussion;
     public boolean isPinned;
-    public boolean noforwards;
+    public boolean noforwards = false;
     private boolean wasPinned;
     public long linkedChatId;
     public boolean isRepliesChat;
@@ -3169,7 +3169,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             canStreamVideo = false;
             animatingNoSound = 0;
             drawSideButton = !isRepliesChat && checkNeedDrawShareButton(messageObject) && (currentPosition == null || currentPosition.last) && !noforwards ? 1 : 0;
-            if (!noforwards && (isPinnedChat || drawSideButton == 1 && messageObject.messageOwner.fwd_from != null && !messageObject.isOutOwner() && messageObject.messageOwner.fwd_from.saved_from_peer != null && messageObject.getDialogId() == UserConfig.getInstance(currentAccount).getClientUserId())) {
+            if (!noforwards && (isPinnedChat || drawSideButton == 1 && messageObject != null && messageObject.messageOwner.fwd_from != null && !messageObject.isOutOwner() && messageObject.messageOwner.fwd_from.saved_from_peer != null && messageObject.getDialogId() == UserConfig.getInstance(currentAccount).getClientUserId())) {
                 drawSideButton = 2;
             }
             replyNameLayout = null;

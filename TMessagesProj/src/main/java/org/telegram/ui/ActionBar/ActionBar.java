@@ -167,10 +167,6 @@ public class ActionBar extends FrameLayout {
         backButtonImageView.setContentDescription(LocaleController.getString("AccDescrGoBack", R.string.AccDescrGoBack));
     }
 
-    public int getContentHeight() {
-        return 154;
-    }
-
     public void setBackButtonDrawable(Drawable drawable) {
         if (backButtonImageView == null) {
             createBackButtonImage();

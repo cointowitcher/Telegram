@@ -1930,7 +1930,7 @@ public class ProfileActivity extends BaseFragment implements NotificationCenter.
             @Override
             protected void showHintRestricted(View view) {
                 ActionBarMenuItem actionBarMenuItem = (ActionBarMenuItem) view;
-                if (pa == null || pa.fragmentView == null || actionBarMenuItem == null) {
+                if (pa == null || pa.fragmentView == null || actionBarMenuItem == null || actionBarMenuItem.getIconView() == null) {
                     return;
                 }
                 FrameLayout frameLayout = (FrameLayout) pa.fragmentView;

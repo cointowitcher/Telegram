@@ -1616,6 +1616,9 @@ public class ActionBarMenuItem extends FrameLayout {
     }
 
     public boolean anyVisible() {
+        if (popupLayout == null) {
+            return false;
+        }
         for (int a = 0, N = popupLayout.getItemsCount(); a < N; a++) {
             if (popupLayout.getItemAt(a).getVisibility() == View.VISIBLE) {
                 return true;

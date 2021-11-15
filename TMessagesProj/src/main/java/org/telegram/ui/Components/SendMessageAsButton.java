@@ -42,10 +42,16 @@ public class SendMessageAsButton extends FrameLayout {
 
     public void setObject(Object object) {
         currentObject = object;
+        if (object == null) { return; }
         if (object instanceof TLRPC.TL_channel) {
             TLRPC.TL_channel channel = (TLRPC.TL_channel) object;
             avatarDrawable.setInfo(channel);
             avatarImageView.setForUserOrChat(channel, avatarDrawable);
+        }
+        if (object instanceof TLRPC.TL_chat) {
+            TLRPC.TL_chat chat = (TLRPC.TL_chat) object;
+            avatarDrawable.setInfo(chat);
+            avatarImageView.setForUserOrChat(chat, avatarDrawable);
         }
 //        update(0);
     }

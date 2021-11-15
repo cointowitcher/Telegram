@@ -85,7 +85,7 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
     private TextInfoPrivacyCell infoCell2;
 
     private boolean isPrivate;
-    private boolean noForwards;
+    private boolean noForwards = false;
 
     private TLRPC.Chat currentChat;
     private TLRPC.ChatFull info;
@@ -414,7 +414,9 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
         checkCell.setOnClickListener(v -> {
             // change state
             noForwards = !noForwards;
-            checkCell.setChecked(noForwards);
+            if (checkCell != null) {
+                checkCell.setChecked(noForwards);
+            }
         }); // Check if leak happens similar to how it would happen on ios.
 
         infoCell2 = new TextInfoPrivacyCell(context);
@@ -489,7 +491,7 @@ public class ChatEditTypeActivity extends BaseFragment implements NotificationCe
                 currentChat.username = newUserName;
             }
         }
-        if (currentChat.noforwards != noForwards) {
+        if (currentChat != null && currentChat.noforwards != noForwards) {
             getMessagesController().toggleNoForwards(chatId, noForwards);
         }
         return true;

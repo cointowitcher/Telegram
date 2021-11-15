@@ -4886,7 +4886,7 @@ public class MessagesController extends BaseController implements NotificationCe
         void didGetPeers(TLRPC.TL_channels_sendAsPeers sendAsPeers, TLRPC.ChatFull chatFull);
     }
 
-    public void doSomethingCool(long chatId, GetPeers callback) {
+    public void getAllPeers(long chatId, GetPeers callback) {
         getFullChat(chatFull -> {
             if (chatFull == null) {
                 callback.didGetPeers(null, null);
@@ -5617,11 +5617,6 @@ public class MessagesController extends BaseController implements NotificationCe
         req.send_as = getInputPeer(getChat(chatId));
         req.peer = getInputPeer(getChat(originalId));
         getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (error == null) {
-                Log.d("sergey","saveDefaultSendAs cool");
-            } else {
-                Log.d("sergey","saveDefaultSendAs not cool");
-            }
         });
     }
 
