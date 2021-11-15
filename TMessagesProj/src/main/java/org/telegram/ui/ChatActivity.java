@@ -1718,12 +1718,17 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 AndroidUtilities.setChatPeer(currentAccount, String.valueOf(chatId), selectedChatIdAsSendAs);
                 closeSendAsChat();
             }
+
+            @Override
+            public boolean canSelect() {
+                return false; // Doesn't matter/ stub
+            }
         });
         FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrameWithoutDp(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM,0, 0, 0, chatActivityEnterView.getHeight() - AndroidUtilities.dp(1));
         getParentActivity().getWindow().addContentView(sendMessageAsListView, layoutParams);
         sendMessageAsListView.setup(chatFullsForSendAs, chatsForSendAs, v -> {
             closeSendAsChat();
-        });
+        }, selectedChatIdAsSendAs);
         keyboardHeight = contentView.getKeyboardHeight() + chatActivityEnterView.getEmojiPadding();
         sendMessageAsListView.setTranslationY(-keyboardHeight);
         contentView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {

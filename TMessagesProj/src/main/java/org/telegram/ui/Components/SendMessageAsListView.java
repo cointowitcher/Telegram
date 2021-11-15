@@ -30,14 +30,14 @@ public class SendMessageAsListView extends FrameLayout {
         this.cellDelegate = cellDelegate;
     }
 
-    public void setup(ArrayList<TLRPC.ChatFull> chatFulls, ArrayList<TLRPC.Chat> chats, OnClickListener bgClicked) {
+    public void setup(ArrayList<TLRPC.ChatFull> chatFulls, ArrayList<TLRPC.Chat> chats, OnClickListener bgClicked, long checkedId) {
         createBgView(bgClicked);
         createDimView();
-        createMainView(chatFulls, chats);
+        createMainView(chatFulls, chats, checkedId);
         animation();
     }
 
-    private void createMainView(ArrayList<TLRPC.ChatFull> chatFulls, ArrayList<TLRPC.Chat> chats) {
+    private void createMainView(ArrayList<TLRPC.ChatFull> chatFulls, ArrayList<TLRPC.Chat> chats, long checkedId) {
         mainView = new SendMessageAsListScrollView(getContext(), cellDelegate);
 
         int maxHeight = AndroidUtilities.dp(454f);
@@ -45,7 +45,7 @@ public class SendMessageAsListView extends FrameLayout {
 
         ViewGroup.LayoutParams layoutParams = LayoutHelper.createFrameWithoutDp(AndroidUtilities.dp(283.63f), Math.min(calculatedHeight, maxHeight), Gravity.BOTTOM | Gravity.LEFT, AndroidUtilities.dp(6.55f), 0, 0, AndroidUtilities.dp(6.91f));
         mainView.setLayoutParams(layoutParams);
-        mainView.configure(chatFulls, chats);
+        mainView.configure(chatFulls, chats, checkedId);
         addView(mainView);
     }
 

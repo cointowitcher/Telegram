@@ -60,16 +60,41 @@ public class SendMessageAsListScrollView extends FrameLayout {
         linearLayout.setOrientation(LinearLayout.VERTICAL);
     }
 
-    void configure(ArrayList<TLRPC.ChatFull> chatFulls, ArrayList<TLRPC.Chat> chats) {
+    SendMessageAsListCell previous;
+
+    boolean shouldProceedMoreFromDelegate = true;
+
+    void configure(ArrayList<TLRPC.ChatFull> chatFulls, ArrayList<TLRPC.Chat> chats, long checkedId) {
         int numsOfItems = chatFulls.size();
         cells = new SendMessageAsListCell[numsOfItems];
         for (int i = 0; i < numsOfItems; i++) {
             TLRPC.ChatFull chatFull = chatFulls.get(i);
             TLRPC.Chat chat = chats.get(i);
-            SendMessageAsListCell cell = new SendMessageAsListCell(getContext(), cellDelegate);
+            SendMessageAsListCell cell = new SendMessageAsListCell(getContext(), new SendMessageAsListCell.SendMessageAsListCellDelegate() {
+                @Override
+                public void onSelected(long id) {
+                    if (previous == null || cells == null || !shouldProceedMoreFromDelegate) { return; };
+                    shouldProceedMoreFromDelegate = false;
+                    previous.setChecked(false, true);
+                    AndroidUtilities.runOnUIThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            cellDelegate.onSelected(id);
+                        }
+                    }, 320);
+                }
+                @Override
+                public boolean canSelect() {
+                    return shouldProceedMoreFromDelegate;
+                }
+            });
             cell.configure(chat.title, String.valueOf(chatFull.participants_count) + " subscribers", chat);
             linearLayout.addView(cell, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 61, Gravity.TOP));
             cells[i] = cell;
+            if (chat.id == checkedId) {
+                cell.setChecked(true, false);
+                previous = cell;
+            }
         }
     }
 
