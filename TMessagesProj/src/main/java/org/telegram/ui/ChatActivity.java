@@ -8098,7 +8098,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         });
         if (currentChat != null && !haveAlreadyCheckedIfSendAsPeers) {
             haveAlreadyCheckedIfSendAsPeers = true;
-            boolean isSupergroup = (currentChat.megagroup && currentChat.username == null || currentChat.has_geo);
+            boolean isSupergroup = (currentChat.megagroup && (currentChat.username == null || currentChat.username.equals("")) || currentChat.has_geo);
             boolean isDiscussionGroup = currentChat.megagroup && currentChat.has_link;
 //                    getNotificationCenter().addObserver(this, NotificationCenter.chatPeersLoaded);
             if (isSupergroup || isDiscussionGroup) {

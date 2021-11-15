@@ -1,5 +1,7 @@
 package org.telegram.ui.Components;
 
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.view.Gravity;
 import android.view.View;
@@ -32,6 +34,10 @@ public class SendMessageAsButton extends FrameLayout {
         addView(checkBox2);
         checkBox2.checkBoxBase.backgroundColorKey = Theme.key_chat_sendAsButtonColor;
         checkBox2.checkBoxBase.background2ColorKey = null;
+        checkBox2.setChecked(true, false);
+        checkBox2.setScaleX(0.0f);
+        checkBox2.setScaleY(0.0f);
+        checkBox2.setAlpha(0.0f);
     }
 
     public void setObject(Object object) {
@@ -50,7 +56,30 @@ public class SendMessageAsButton extends FrameLayout {
     }
 
     public void setChecked(boolean enabled, boolean animated) {
-        this.checkBox2.setChecked(enabled, animated);
+        // SERTODO: Maybe create some kind of flag to toggle two ways of animating this
+//        this.checkBox2.setChecked(enabled, animated);
+        if (!animated) { return; }
+        View view1;
+        View view2;
+        if (enabled) {
+            view1 = checkBox2;
+            view2 = avatarImageView;
+        } else {
+            view1 = avatarImageView;
+            view2 = checkBox2;
+        }
+
+        AnimatorSet animationOpen = new AnimatorSet();
+        animationOpen.playTogether(
+                ObjectAnimator.ofFloat(view1, View.ALPHA, 1.0f),
+                ObjectAnimator.ofFloat(view1, View.SCALE_X, 1.0f),
+                ObjectAnimator.ofFloat(view1, View.SCALE_Y, 1.0f),
+                ObjectAnimator.ofFloat(view2, View.ALPHA, 0.0f),
+                ObjectAnimator.ofFloat(view2, View.SCALE_X, 0.0f),
+                ObjectAnimator.ofFloat(view2, View.SCALE_Y, 0.0f)
+        );
+        animationOpen.setDuration(300);
+        animationOpen.start();
     }
 
     @Override
