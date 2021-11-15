@@ -10,8 +10,8 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 
-import org.telegramsr1.messenger.AndroidUtilities;
-import org.telegramsr1.messenger.voip.VoIPService;
+import org.telegram.messenger.AndroidUtilities;
+import org.telegram.messenger.voip.VoIPService;
 
 import java.util.concurrent.CountDownLatch;
 

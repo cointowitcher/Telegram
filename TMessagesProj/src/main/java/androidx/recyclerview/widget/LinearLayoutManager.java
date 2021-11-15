@@ -33,6 +33,8 @@ import androidx.annotation.RestrictTo;
 import androidx.core.os.TraceCompat;
 import androidx.core.view.ViewCompat;
 
+import org.telegram.messenger.BuildVars;
+
 import java.util.List;
 
 /**

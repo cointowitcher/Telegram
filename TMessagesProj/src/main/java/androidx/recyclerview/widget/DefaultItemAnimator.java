@@ -27,7 +27,7 @@ import android.view.animation.Interpolator;
 import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 
-import org.telegramsr1.messenger.BuildVars;
+import org.telegram.messenger.BuildVars;
 
 import java.util.ArrayList;
 import java.util.List;

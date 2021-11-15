@@ -484,7 +484,7 @@ extern "C" int registerNativeTgNetFunctions(JavaVM *vm, JNIEnv *env) {
         return JNI_FALSE;
     }
     
-    jclass_RequestDelegateInternal = (jclass) env->NewGlobalRef(env->FindClass("org/telegramsr1/tgnet/RequestDelegateInternal"));
+    jclass_RequestDelegateInternal = (jclass) env->NewGlobalRef(env->FindClass("org/telegram/tgnet/RequestDelegateInternal"));
     if (jclass_RequestDelegateInternal == 0) {
         return JNI_FALSE;
     }
@@ -493,7 +493,7 @@ extern "C" int registerNativeTgNetFunctions(JavaVM *vm, JNIEnv *env) {
         return JNI_FALSE;
     }
 
-    jclass_RequestTimeDelegate = (jclass) env->NewGlobalRef(env->FindClass("org/telegramsr1/tgnet/RequestTimeDelegate"));
+    jclass_RequestTimeDelegate = (jclass) env->NewGlobalRef(env->FindClass("org/telegram/tgnet/RequestTimeDelegate"));
     if (jclass_RequestTimeDelegate == 0) {
         return JNI_FALSE;
     }
@@ -502,7 +502,7 @@ extern "C" int registerNativeTgNetFunctions(JavaVM *vm, JNIEnv *env) {
         return JNI_FALSE;
     }
 
-    jclass_QuickAckDelegate = (jclass) env->NewGlobalRef(env->FindClass("org/telegramsr1/tgnet/QuickAckDelegate"));
+    jclass_QuickAckDelegate = (jclass) env->NewGlobalRef(env->FindClass("org/telegram/tgnet/QuickAckDelegate"));
     if (jclass_RequestDelegateInternal == 0) {
         return JNI_FALSE;
     }
@@ -511,7 +511,7 @@ extern "C" int registerNativeTgNetFunctions(JavaVM *vm, JNIEnv *env) {
         return JNI_FALSE;
     }
 
-    jclass_WriteToSocketDelegate = (jclass) env->NewGlobalRef(env->FindClass("org/telegramsr1/tgnet/WriteToSocketDelegate"));
+    jclass_WriteToSocketDelegate = (jclass) env->NewGlobalRef(env->FindClass("org/telegram/tgnet/WriteToSocketDelegate"));
     if (jclass_WriteToSocketDelegate == 0) {
         return JNI_FALSE;
     }
@@ -519,7 +519,7 @@ extern "C" int registerNativeTgNetFunctions(JavaVM *vm, JNIEnv *env) {
     if (jclass_WriteToSocketDelegate_run == 0) {
         return JNI_FALSE;
     }
-    jclass_ConnectionsManager = (jclass) env->NewGlobalRef(env->FindClass("org/telegramsr1/tgnet/ConnectionsManager"));
+    jclass_ConnectionsManager = (jclass) env->NewGlobalRef(env->FindClass("org/telegram/tgnet/ConnectionsManager"));
     if (jclass_ConnectionsManager == 0) {
         return JNI_FALSE;
     }

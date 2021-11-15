@@ -32,7 +32,7 @@ import android.view.ViewConfiguration;
 import android.view.ViewParent;
 import android.view.animation.Interpolator;
 
-import org.telegramsr1.messenger.AndroidUtilities;
+import org.telegram.messenger.AndroidUtilities;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
