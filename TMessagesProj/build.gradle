@@ -195,6 +195,7 @@ android {
             ext {
                 abiVersionCode = 1
             }
+            applicationId 'org.telegramsr1.messenger'
         }
         x86 {
             ndk {
@@ -203,6 +204,7 @@ android {
             ext {
                 abiVersionCode = 2
             }
+            applicationId 'org.telegramsr1.messenger'
         }
         armv7_SDK23 {
             ndk {
@@ -218,6 +220,7 @@ android {
             ext {
                 abiVersionCode = 3
             }
+            applicationId 'org.telegramsr1.messenger'
         }
         x86_SDK23 {
             ndk {
@@ -233,6 +236,7 @@ android {
             ext {
                 abiVersionCode = 4
             }
+            applicationId 'org.telegramsr1.messenger'
         }
         arm64 {
             ndk {
@@ -241,6 +245,7 @@ android {
             ext {
                 abiVersionCode = 5
             }
+            applicationId 'org.telegramsr1.messenger'
         }
         x64 {
             ndk {
@@ -249,6 +254,7 @@ android {
             ext {
                 abiVersionCode = 6
             }
+            applicationId 'org.telegramsr1.messenger'
         }
         arm64_SDK23 {
             ndk {
@@ -264,6 +270,7 @@ android {
             ext {
                 abiVersionCode = 7
             }
+            applicationId 'org.telegramsr1.messenger'
         }
         x64_SDK23 {
             ndk {
@@ -279,6 +286,7 @@ android {
             ext {
                 abiVersionCode = 8
             }
+            applicationId 'org.telegramsr1.messenger'
         }
         afat {
             ndk {
@@ -296,6 +304,7 @@ android {
             ext {
                 abiVersionCode = 9
             }
+            applicationId 'org.telegramsr1.messenger'
         }
     }
 
