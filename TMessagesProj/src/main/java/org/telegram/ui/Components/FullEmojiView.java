@@ -97,7 +97,7 @@ public class FullEmojiView extends FrameLayout {
                 ObjectAnimator.ofFloat(v, View.TRANSLATION_X, translationX),
                 ObjectAnimator.ofFloat(v, View.TRANSLATION_Y, translationY)
                 );
-        animatorSet.setDuration(700);
+        animatorSet.setDuration(2000);
 
         imageView.imageReceiver.setZeroFrame();
         effectsImageView.imageReceiver.setZeroFrame();
@@ -119,7 +119,7 @@ public class FullEmojiView extends FrameLayout {
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.playTogether(ObjectAnimator.ofFloat(v, "scaleX", 1.0f, 5f),
                 ObjectAnimator.ofFloat(v, "scaleY", 1.0f, 5f));
-        animatorSet.setDuration(400);
+        animatorSet.setDuration(2000);
         animatorSet.start();
     }
 }

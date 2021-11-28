@@ -57,7 +57,7 @@ public class ActionBarPopupWindow extends PopupWindow {
     private static DecelerateInterpolator decelerateInterpolator = new DecelerateInterpolator();
     private AnimatorSet windowAnimatorSet;
     private boolean animationEnabled = allowAnimation;
-    private int dismissAnimationDuration = 150;
+    private int dismissAnimationDuration = 2000;
     private boolean isClosingAnimated;
     private int currentAccount = UserConfig.selectedAccount;
     private boolean pauseNotifications;
@@ -283,7 +283,7 @@ public class ActionBarPopupWindow extends PopupWindow {
                 animatorSet.playTogether(
                         ObjectAnimator.ofFloat(child, View.ALPHA, 0f, child.isEnabled() ? 1f : 0.5f),
                         ObjectAnimator.ofFloat(child, View.TRANSLATION_Y, AndroidUtilities.dp(shownFromBotton ? 6 : -6), 0));
-                animatorSet.setDuration(180);
+                animatorSet.setDuration(1200);
                 animatorSet.addListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
@@ -592,7 +592,7 @@ public class ActionBarPopupWindow extends PopupWindow {
                     ObjectAnimator.ofFloat(viewGroup, View.SCALE_X, 0.6f, 1.0f),
                     ObjectAnimator.ofFloat(viewGroup, View.SCALE_Y, 0.6f, 1.0f)
                     );
-            long duration = 400;
+            long duration = 1200;
             windowAnimatorSet.setDuration(duration);
             windowAnimatorSet.addListener(new AnimatorListenerAdapter() {
                 @Override
@@ -669,7 +669,7 @@ public class ActionBarPopupWindow extends PopupWindow {
                     ObjectAnimator.ofInt(content, "backAlpha", 0, 255),
                     ObjectAnimator.ofFloat(content, "scaleX", 0.0f, 1.0f),
                     ObjectAnimator.ofFloat(content, "scaleY", 0.0f, 1.0f));
-            windowAnimatorSet.setDuration(150 + 16 * visibleCount);
+            windowAnimatorSet.setDuration(1200);
             windowAnimatorSet.addListener(new AnimatorListenerAdapter() {
                 @Override
                 public void onAnimationEnd(Animator animation) {

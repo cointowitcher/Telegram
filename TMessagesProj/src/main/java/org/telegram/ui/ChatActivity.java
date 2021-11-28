@@ -20246,7 +20246,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         animators.add(ObjectAnimator.ofFloat(mentiondownButton, View.ALPHA, 1.0f));
                     }
                     scrimAnimatorSet.playTogether(animators);
-                    scrimAnimatorSet.setDuration(220);
+                    scrimAnimatorSet.setDuration(2000);
                     scrimAnimatorSet.addListener(new AnimatorListenerAdapter() {
                         @Override
                         public void onAnimationEnd(Animator animation) {
@@ -20265,7 +20265,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
             };
             scrimPopupWindow.setPauseNotifications(true);
-            scrimPopupWindow.setDismissAnimationDuration(220);
+            scrimPopupWindow.setDismissAnimationDuration(2000);
             scrimPopupWindow.setOutsideTouchable(true);
             scrimPopupWindow.setClippingEnabled(true);
             scrimPopupWindow.setAnimationStyle(R.style.PopupContextAnimation);
@@ -20437,7 +20437,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             public void run() {
                 fullEmojiPopupWindow.dismiss(false);
             }
-        }, 2000);
+        }, 2000 * 3);
 //        (getParentActivity().getWindow()).addContentView(fullEmojiView, layoutParams);
 //        getParentActivity().getWindow().addContentView(fullEmojiView, layoutParams);
         /*
