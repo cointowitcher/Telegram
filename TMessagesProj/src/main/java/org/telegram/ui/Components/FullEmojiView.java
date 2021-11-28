@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DocumentObject;
 import org.telegram.messenger.ImageLocation;
+import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
@@ -63,17 +64,11 @@ public class FullEmojiView extends FrameLayout {
         int[] loc = new int[2];
         emojiView.getLocationOnScreen(loc);
 
-        TLRPC.Document select_animation = emojiView.reaction.activate_animation;
-        SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(select_animation, Theme.key_windowBackgroundGray, 1.0f);
-        effectsImageView.setImage(ImageLocation.getForDocument(emojiView.reaction.effect_animation), null, "webp", null, this);
-        imageView.setImage(ImageLocation.getForDocument(select_animation), null, "webp", svgThumb, this);
         v.addView(imageView);
         float startWidth = emojiView.getWidth() * 1.02f;
         int startX = loc[0];
         int startY = (int)(loc[1] - statusBarHeight);
         v.setLayoutParams(LayoutHelper.createFrameWithoutDp((int)(startWidth), (int)(emojiView.getHeight() * 1.02f), Gravity.LEFT | Gravity.TOP, startX, startY, 0, 0));
-        imageView.setAlpha(1);
-        imageView.setVisibility(VISIBLE);
 
         float endSize = 0.48f * AndroidUtilities.getRealScreenSize().x;
         float endX = AndroidUtilities.getRealScreenSize().x * 0.5f - endSize * 0.5f;
@@ -101,18 +96,24 @@ public class FullEmojiView extends FrameLayout {
 
         imageView.imageReceiver.setZeroFrame();
         effectsImageView.imageReceiver.setZeroFrame();
-        getViewTreeObserver().addOnPreDrawListener(new ViewTreeObserver.OnPreDrawListener() {
+        effectsImageView.setImage(ImageLocation.getForDocument(emojiView.reaction.effect_animation), null, "webp", null, this);
+        imageView.setImage(ImageLocation.getForDocument(emojiView.reaction.activate_animation), null, "webp", null, this);
+        AndroidUtilities.runOnUIThread(new Runnable() {
             @Override
-            public boolean onPreDraw() {
-                getViewTreeObserver().removeOnPreDrawListener(this);
-                emojiView.imageView.setAlpha(0);
+            public void run() {
+                imageView.setAlpha(1);
+                imageView.setVisibility(VISIBLE);
                 imageView.imageReceiver.startLottie();
                 effectsImageView.imageReceiver.startLottie();
                 animatorSet.start();
-
-                return true;
+                AndroidUtilities.runOnUIThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        emojiView.imageView.setAlpha(0);
+                    }
+                });
             }
-        });
+        }, 30);
     }
 
     void animateShowingUp() {

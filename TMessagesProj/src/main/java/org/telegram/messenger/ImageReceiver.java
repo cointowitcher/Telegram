@@ -586,7 +586,6 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
         if (delegate != null) {
             delegate.didSetImage(this, currentImageDrawable != null || currentThumbDrawable != null || staticThumbDrawable != null || currentMediaDrawable != null, currentImageDrawable == null && currentMediaDrawable == null, false);
         }
-
         ImageLoader.getInstance().loadImageForImageReceiver(this);
         if (parentView != null) {
             if (invalidateAll) {

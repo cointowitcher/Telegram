@@ -154,6 +154,7 @@ public class EmojisScrollComponent extends FrameLayout {
     public class EmojisCell extends FrameLayout {
         public BackupImageView imageView;
         public TLRPC.TL_availableReaction reaction;
+        private BackupImageView receiverJustForClickedImage; // Clicked image receiver. STODO: Maybe receive in another way. I have an idea that we should start animation on when animation has been loaded. But for now I'll to stick to just loading it right there. It might cause performance troubles I guess
 
         public EmojisCell(@NonNull Context context, float leftMargin) {
             super(context);
@@ -167,6 +168,7 @@ public class EmojisScrollComponent extends FrameLayout {
             imageView.setLayerNum(1);
             addView(imageView);
             imageView.imageReceiver.setAllowStartLottieAnimation(false);
+            receiverJustForClickedImage = new BackupImageView(context);
         }
 
         void configure(TLRPC.TL_availableReaction reaction) {
@@ -174,7 +176,10 @@ public class EmojisScrollComponent extends FrameLayout {
             SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(reaction.select_animation, Theme.key_windowBackgroundGray, 1.0f);
             imageView.setLayoutParams(LayoutHelper.createFrame(40, 40, Gravity.CENTER, 0, 0, 0, 0));
             imageView.setImage(ImageLocation.getForDocument(reaction.select_animation), "66_66", null, svgThumb, this);
+//            receiverJustForClickedImage.setImage(ImageLocation.getForDocument(reaction.activate_animation), null, null, "webp", null);
             imageView.imageReceiver.setZeroFrame();
+            receiverJustForClickedImage.setImage(ImageLocation.getForDocument(reaction.activate_animation), null, "webp", null, null);
+            ImageLoader.getInstance().loadImageForImageReceiver(receiverJustForClickedImage.imageReceiver);
         }
 
         void play() {
