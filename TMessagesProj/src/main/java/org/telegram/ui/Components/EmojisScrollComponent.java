@@ -95,7 +95,7 @@ public class EmojisScrollComponent extends FrameLayout {
         linearLayoutScroll.removeAllViews();
         for(int i = 0; i < reactions.size(); i++) {
             EmojisCell emojisCell = new EmojisCell(getContext(), i == 0 ? 0 : 2.5f);
-            emojisCell.configure(reactions.get(i).select_animation);
+            emojisCell.configure(reactions.get(i));
             emojisCell.setOnClickListener(v -> {
                 callback.selected((FrameLayout) v);
             });
@@ -151,9 +151,9 @@ public class EmojisScrollComponent extends FrameLayout {
         handler.postDelayed(runTask, 500);
     }
 
-    class EmojisCell extends FrameLayout {
+    public class EmojisCell extends FrameLayout {
         public BackupImageView imageView;
-        public TLRPC.Document select_animation;
+        public TLRPC.TL_availableReaction reaction;
 
         public EmojisCell(@NonNull Context context, float leftMargin) {
             super(context);
@@ -169,20 +169,19 @@ public class EmojisScrollComponent extends FrameLayout {
             imageView.imageReceiver.setAllowStartLottieAnimation(false);
         }
 
-        void configure(TLRPC.Document select_animation) {
-            this.select_animation = select_animation;
-            SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(select_animation, Theme.key_windowBackgroundGray, 1.0f);
+        void configure(TLRPC.TL_availableReaction reaction) {
+            this.reaction = reaction;
+            SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(reaction.select_animation, Theme.key_windowBackgroundGray, 1.0f);
             imageView.setLayoutParams(LayoutHelper.createFrame(40, 40, Gravity.CENTER, 0, 0, 0, 0));
-            imageView.setImage(ImageLocation.getForDocument(select_animation), "66_66", null, svgThumb, this);
+            imageView.setImage(ImageLocation.getForDocument(reaction.select_animation), "66_66", null, svgThumb, this);
+            imageView.imageReceiver.setZeroFrame();
         }
 
         void play() {
             if (imageView == null || imageView.imageReceiver == null || imageView.imageReceiver.getLottieAnimation() == null) {
                 return;
             }
-            imageView.imageReceiver.getLottieAnimation().autoRepeatPlayCount = 1;
-            imageView.imageReceiver.setAutoRepeat(2);
-            imageView.imageReceiver.startAnimation();
+            imageView.imageReceiver.startLottie();
         }
     }
 

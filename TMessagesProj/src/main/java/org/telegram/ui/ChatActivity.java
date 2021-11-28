@@ -20420,11 +20420,18 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private void showFullEmojiView(FrameLayout emojiView, EmojisScrollComponent emojisScroll) {
         float statusBarHeight = (Build.VERSION.SDK_INT >= 21 && !inBubbleMode ? AndroidUtilities.statusBarHeight : 0);
         fullEmojiView = new FullEmojiView(contentView.getContext());
-        fullEmojiView.configure(emojiView, emojisScroll, statusBarHeight);
+        fullEmojiView.configure((EmojisScrollComponent.EmojisCell) emojiView, emojisScroll, statusBarHeight);
         fullEmojiPopupWindow = new ActionBarPopupWindow(fullEmojiView, getParentActivity().getWindow().getDecorView().getWidth(), getParentActivity().getWindow().getDecorView().getHeight());
         FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT);
         fullEmojiView.setLayoutParams(layoutParams);
         fullEmojiPopupWindow.showAtLocation(getParentActivity().getWindow().getDecorView(), Gravity.LEFT | Gravity.TOP, 0, 0);
+
+        if (scrimPopupWindow != null) {
+            scrimPopupWindow.dismiss();
+            scrimPopupWindow = null;
+            menuDeleteItem = null;
+            scrimPopupWindowItems = null;
+        }
         AndroidUtilities.runOnUIThread(new Runnable() {
             @Override
             public void run() {

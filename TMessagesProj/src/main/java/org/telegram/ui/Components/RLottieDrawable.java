@@ -699,6 +699,18 @@ public class RLottieDrawable extends BitmapDrawable implements Animatable {
         return PixelFormat.TRANSPARENT;
     }
 
+    public void startAnyway() {
+        isRunning = true;
+        if (invalidateOnProgressSet) {
+            isInvalid = true;
+            if (loadFrameTask != null) {
+                doNotRemoveInvalidOnFrameReady = true;
+            }
+        }
+        scheduleNextGetFrame();
+        invalidateInternal();
+    }
+
     @Override
     public void start() {
         if (isRunning || autoRepeat >= 2 && autoRepeatPlayCount != 0) {
