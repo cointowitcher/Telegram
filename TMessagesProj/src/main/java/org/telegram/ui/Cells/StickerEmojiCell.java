@@ -38,7 +38,7 @@ import org.telegram.messenger.SvgHelper;
 
 public class StickerEmojiCell extends FrameLayout {
 
-    private BackupImageView imageView;
+    public BackupImageView imageView;
     private TLRPC.Document sticker;
     private SendMessagesHelper.ImportingSticker stickerPath;
     private Object parentObject;

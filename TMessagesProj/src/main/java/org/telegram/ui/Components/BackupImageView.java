@@ -24,7 +24,7 @@ import org.telegram.tgnet.TLObject;
 
 public class BackupImageView extends View {
 
-    protected ImageReceiver imageReceiver;
+    public ImageReceiver imageReceiver;
     protected int width = -1;
     protected int height = -1;
 

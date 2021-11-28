@@ -96,4 +96,8 @@ public class AccountInstance {
     public int getCurrentAccount() {
         return currentAccount;
     }
+
+    public ReactionsManager getReactionsManager() {
+        return ReactionsManager.getInstance(currentAccount);
+    }
 }
