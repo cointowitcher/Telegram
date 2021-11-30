@@ -59,10 +59,36 @@ public class FullEmojiView extends FrameLayout {
         effectsImageView.setAspectFit(true);
         effectsImageView.setLayerNum(2);
         effectsImageView.imageReceiver.setAllowStartLottieAnimation(true);
+
+        imageView.imageReceiver.setDelegate(new ImageReceiver.ImageReceiverDelegate() {
+            @Override
+            public void didSetImage(ImageReceiver imageReceiver, boolean set, boolean thumb, boolean memCache) {
+                AndroidUtilities.runOnUIThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        imageView.setAlpha(1);
+                        imageView.setVisibility(VISIBLE);
+                        imageView.imageReceiver.startLottie();
+                        effectsImageView.imageReceiver.startLottie();
+                        animatorSet.start();
+                        AndroidUtilities.runOnUIThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                emojiView.imageView.setAlpha(0);
+                            }
+                        });
+                    }
+                }, 30);
+            }
+        });
     }
 
+
+    EmojisScrollComponent.EmojisCell emojiView;
+    AnimatorSet animatorSet;
     public void configure(EmojisScrollComponent.EmojisCell emojiView, FrameLayout emojiScroll, float statusBarHeight) {
         int[] loc = new int[2];
+        this.emojiView = emojiView;
         emojiView.getLocationOnScreen(loc);
 
         v.addView(imageView);
@@ -86,7 +112,7 @@ public class FullEmojiView extends FrameLayout {
         float v2LeftMargin = -effectsImageWidth * 0.1f;
         v2.setLayoutParams(LayoutHelper.createFrameWithoutDp((int)effectsImageWidth, (int)effectsImageWidth, Gravity.LEFT | Gravity.TOP, (int)v2LeftMargin, (int)effectImageTopSpace, 0, 0));
 
-        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet = new AnimatorSet();
         animatorSet.setInterpolator(CubicBezierInterpolator.EASE_OUT);
         animatorSet.playTogether(ObjectAnimator.ofFloat(v, View.SCALE_X, endScale),
                 ObjectAnimator.ofFloat(v, View.SCALE_Y, endScale),
@@ -99,22 +125,6 @@ public class FullEmojiView extends FrameLayout {
         effectsImageView.imageReceiver.setZeroFrame();
         effectsImageView.setImage(ImageLocation.getForDocument(emojiView.reaction.effect_animation), null, "webp", null, this);
         imageView.setImage(ImageLocation.getForDocument(emojiView.reaction.activate_animation), null, "webp", null, this);
-        AndroidUtilities.runOnUIThread(new Runnable() {
-            @Override
-            public void run() {
-                imageView.setAlpha(1);
-                imageView.setVisibility(VISIBLE);
-                imageView.imageReceiver.startLottie();
-                effectsImageView.imageReceiver.startLottie();
-                animatorSet.start();
-                AndroidUtilities.runOnUIThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        emojiView.imageView.setAlpha(0);
-                    }
-                });
-            }
-        }, 30);
     }
 
     void animateShowingUp() {

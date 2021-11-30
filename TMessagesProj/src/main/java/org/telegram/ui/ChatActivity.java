@@ -60,6 +60,7 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.URLSpan;
+import android.util.Pair;
 import android.util.Property;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
@@ -20433,27 +20434,34 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             scrimPopupWindowItems = null;
         }
         String reaction = ((EmojisScrollComponent.EmojisCell) emojiView).reaction.reaction;
-        AndroidUtilities.runOnUIThread(new Runnable() {
-            @Override
-            public void run() {
-                TLRPC.TL_messages_sendReaction sendReaction = new TLRPC.TL_messages_sendReaction();
-                sendReaction.reaction = reaction;
-                sendReaction.msg_id = messageObject.getId();
-                sendReaction.flags = 1;
-                sendReaction.peer = getMessagesController().getInputPeer(getMessagesController().getPeer(dialog_id));
-                getConnectionsManager().sendRequest(sendReaction, (resp, error) -> {
-                    if (error == null) {
-                        messageObject.addReactionsForPersonalChat(reaction, true);
-                        messageObject.forceUpdate = true;
+        AndroidUtilities.runOnUIThread(() -> {
+                getSendMessagesHelper().sendReaction(messageObject, reaction, ChatActivity.this, (pair) -> {
+                    Pair<TLObject, TLRPC.TL_error> obj = (Pair<TLObject, TLRPC.TL_error>) pair;
+                    if (obj.first != null) {
                         AndroidUtilities.runOnUIThread(() -> {
-//                            updateVisibleRows();
+                            messageObject.forceUpdate = true;
+                            messageObject.addReactionsForPersonalChat(reaction, true);
                             chatAdapter.updateRowWithMessageObject(messageObject, false);
                         });
-//                        chatAdapter.updateRowWithMessageObject(messageObject, false);
                     }
                 });
-            }
-        }, 1000);
+//                TLRPC.TL_messages_sendReaction sendReaction = new TLRPC.TL_messages_sendReaction();
+//                sendReaction.reaction = reaction;
+//                sendReaction.msg_id = messageObject.getId();
+//                sendReaction.flags = 1;
+//                sendReaction.peer = getMessagesController().getInputPeer(getMessagesController().getPeer(dialog_id));
+//                getConnectionsManager().sendRequest(sendReaction, (resp, error) -> {
+//                    if (error == null) {
+//                        messageObject.addReactionsForPersonalChat(reaction, true);
+//                        messageObject.forceUpdate = true;
+//                        AndroidUtilities.runOnUIThread(() -> {
+////                            updateVisibleRows();
+//                            chatAdapter.updateRowWithMessageObject(messageObject, false);
+//                        });
+////                        chatAdapter.updateRowWithMessageObject(messageObject, false);
+//                    }
+//                });
+            }, 1000);
         AndroidUtilities.runOnUIThread(new Runnable() {
             @Override
             public void run() {

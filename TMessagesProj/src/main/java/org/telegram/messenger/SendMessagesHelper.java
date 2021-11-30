@@ -29,9 +29,11 @@ import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.text.TextUtils;
 import android.util.Base64;
+import android.util.Pair;
 import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.Gravity;
+import android.view.View;
 import android.webkit.MimeTypeMap;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -2654,6 +2656,10 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     public void sendReaction(MessageObject messageObject, CharSequence reaction, ChatActivity parentFragment) {
+        sendReaction(messageObject, reaction, parentFragment, null);
+    }
+
+    public void sendReaction(MessageObject messageObject, CharSequence reaction, ChatActivity parentFragment, CallbackAnything cb) {
         if (messageObject == null || parentFragment == null) {
             return;
         }
@@ -2667,6 +2673,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         getConnectionsManager().sendRequest(req, (response, error) -> {
             if (response != null) {
                 getMessagesController().processUpdates((TLRPC.Updates) response, false);
+            }
+            if (cb != null) {
+                cb.callback(new Pair<TLObject, TLRPC.TL_error>(response, error));
             }
             /*AndroidUtilities.runOnUIThread(new Runnable() {
                 @Override
