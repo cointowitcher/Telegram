@@ -52,6 +52,7 @@ public class FullEmojiView extends FrameLayout {
         imageView = new BackupImageView(getContext());
         imageView.setAspectFit(true);
         imageView.setLayerNum(2);
+        imageView.imageReceiver.setAllowDecodeSingleFrame(true);
         imageView.imageReceiver.setAllowStartLottieAnimation(true);
 
         effectsImageView = new BackupImageView(getContext());

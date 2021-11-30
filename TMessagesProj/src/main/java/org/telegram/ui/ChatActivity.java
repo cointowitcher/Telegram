@@ -20042,7 +20042,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 scrollComponent = new EmojisScrollComponent(v.getContext(), null);
                 EmojisScrollComponent finalScrollComponent = scrollComponent;
                 scrollComponent.setupOnClickListener((emojiView) -> {
-                    showFullEmojiView((FrameLayout) emojiView, finalScrollComponent);
+                    showFullEmojiView((FrameLayout) emojiView, finalScrollComponent, message);
                 });
                 scrimPopupContainerLayout.addView(scrollComponent, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, 48, 0, -8f + 10.8f, 0, 0));
             }
@@ -20417,7 +20417,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
     FullEmojiView fullEmojiView;
     ActionBarPopupWindow fullEmojiPopupWindow;
-    private void showFullEmojiView(FrameLayout emojiView, EmojisScrollComponent emojisScroll) {
+    private void showFullEmojiView(FrameLayout emojiView, EmojisScrollComponent emojisScroll, MessageObject messageObject) {
         float statusBarHeight = (Build.VERSION.SDK_INT >= 21 && !inBubbleMode ? AndroidUtilities.statusBarHeight : 0);
         fullEmojiView = new FullEmojiView(contentView.getContext());
         fullEmojiView.configure((EmojisScrollComponent.EmojisCell) emojiView, emojisScroll, statusBarHeight);
@@ -20432,12 +20432,34 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             menuDeleteItem = null;
             scrimPopupWindowItems = null;
         }
+        String reaction = ((EmojisScrollComponent.EmojisCell) emojiView).reaction.reaction;
+        AndroidUtilities.runOnUIThread(new Runnable() {
+            @Override
+            public void run() {
+                TLRPC.TL_messages_sendReaction sendReaction = new TLRPC.TL_messages_sendReaction();
+                sendReaction.reaction = reaction;
+                sendReaction.msg_id = messageObject.getId();
+                sendReaction.flags = 1;
+                sendReaction.peer = getMessagesController().getInputPeer(getMessagesController().getPeer(dialog_id));
+                getConnectionsManager().sendRequest(sendReaction, (resp, error) -> {
+                    if (error == null) {
+                        messageObject.addReactionsForPersonalChat(reaction, true);
+                        messageObject.forceUpdate = true;
+                        AndroidUtilities.runOnUIThread(() -> {
+//                            updateVisibleRows();
+                            chatAdapter.updateRowWithMessageObject(messageObject, false);
+                        });
+//                        chatAdapter.updateRowWithMessageObject(messageObject, false);
+                    }
+                });
+            }
+        }, 1000);
         AndroidUtilities.runOnUIThread(new Runnable() {
             @Override
             public void run() {
                 fullEmojiPopupWindow.dismiss(false);
             }
-        }, 2000 * 3);
+        }, 4500);
 //        (getParentActivity().getWindow()).addContentView(fullEmojiView, layoutParams);
 //        getParentActivity().getWindow().addContentView(fullEmojiView, layoutParams);
         /*

@@ -189,6 +189,16 @@ public class MessageObject {
 
     public ImageLocation mediaThumb;
     public ImageLocation mediaSmallThumb;
+    public String reactionForPersonalChosen;
+    public String reactionForPersonalNotChosen;
+
+    public void addReactionsForPersonalChat(String reaction, boolean chosen) {
+        if (chosen) {
+            reactionForPersonalChosen = reaction;
+        } else {
+            reactionForPersonalNotChosen = reaction;
+        }
+    }
 
     static final String[] excludeWords = new String[] {
             " vs. ",
@@ -878,6 +888,11 @@ public class MessageObject {
         localChannel = isChannel;
         localSupergroup = supergroup;
         localEdit = edit;
+        if (message.reactions != null && message.reactions.results.size() != 0) {
+            for(int i = 0; i < message.reactions.results.size(); i++) {
+                addReactionsForPersonalChat(message.reactions.results.get(i).reaction, message.reactions.results.get(i).chosen);
+            }
+        }
     }
 
     public MessageObject(int accountNum, TLRPC.Message message, AbstractMap<Long, TLRPC.User> users, boolean generateLayout, boolean checkMediaExists) {
@@ -916,6 +931,12 @@ public class MessageObject {
         replyMessageObject = replyToMessage;
         eventId = eid;
         wasUnread = !messageOwner.out && messageOwner.unread;
+        if (message.reactions != null && message.reactions.results.size() != 0) {
+            for(int i = 0; i < message.reactions.results.size(); i++) {
+                addReactionsForPersonalChat(message.reactions.results.get(i).reaction, message.reactions.results.get(i).chosen);
+            }
+        }
+
 
         if (message.replyMessage != null) {
             replyMessageObject = new MessageObject(currentAccount, message.replyMessage, null, users, chats, sUsers, sChats, false, checkMediaExists, eid);

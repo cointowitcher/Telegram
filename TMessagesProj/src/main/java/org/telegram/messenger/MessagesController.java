@@ -12602,6 +12602,9 @@ public class MessagesController extends BaseController implements NotificationCe
 
                 boolean isDialogCreated = createdDialogIds.contains(message.dialog_id);
                 MessageObject obj = new MessageObject(currentAccount, message, usersDict, chatsDict, isDialogCreated, isDialogCreated);
+                if (obj.messageText.toString().equals("testx")) {
+                    obj.messageText = "hahaha";
+                }
 
                 LongSparseArray<ArrayList<MessageObject>> array;
                 if (editingMessages == null) {
