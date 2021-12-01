@@ -50,11 +50,11 @@ public class FullEmojiView extends FrameLayout {
     }
 
     private void createImageView() {
-        v = new LinearLayout(getContext());
 
         v3 = new LinearLayout(getContext());
         addView(v3);
 
+        v = new LinearLayout(getContext());
         v.setLayoutParams(LayoutHelper.createFrame(200, 200, Gravity.CENTER));
         addView(v);
 
@@ -236,14 +236,6 @@ public class FullEmojiView extends FrameLayout {
             @Override
             public void onAnimationRepeat(Animator animation) {}
         });
-    }
-
-    void animateShowingUp() {
-        AnimatorSet animatorSet = new AnimatorSet();
-        animatorSet.playTogether(ObjectAnimator.ofFloat(v, "scaleX", 1.0f, 5f),
-                ObjectAnimator.ofFloat(v, "scaleY", 1.0f, 5f));
-        animatorSet.setDuration(2000);
-        animatorSet.start();
     }
 
     @FunctionalInterface

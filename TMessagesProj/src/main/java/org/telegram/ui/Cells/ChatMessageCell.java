@@ -285,6 +285,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         default boolean isLandscape() {
             return false;
         }
+        default void didPressChosenReaction(ChatMessageCell cell) {}
     }
 
     private final static int DOCUMENT_ATTACH_TYPE_NONE = 0;
@@ -693,6 +694,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private ImageReceiver locationImageReceiver;
     private ImageReceiver reactionsChosen;
     private ImageReceiver reactionsNotChosen;
+    private boolean reactionsChosenPressed = false;
 
     private float reactionsChosenX;
     private float reactionsChosenY;
@@ -2115,6 +2117,35 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return result;
     }
 
+    private boolean checkChosenReactionMotionEvent(MotionEvent event) {
+        if (getMessageObject().reactionForPersonalChosen == null) {
+            return false;
+        }
+
+        int x = (int) event.getX();
+        int y = (int) event.getY();
+
+        boolean result = false;
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            int addXY = AndroidUtilities.dp(5);
+            int reactionsSize = AndroidUtilities.dp(reactionSmallImageSize);
+            if (x >= reactionsChosenX - addXY && x <= reactionsChosenX + addXY + reactionsSize && y >= reactionsChosenY - addXY && y <= reactionsChosenY + addXY + reactionsSize) {
+                reactionsChosenPressed = true;
+                result = true;
+            }
+        } else {
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (reactionsChosenPressed) {
+                    playSoundEffect(SoundEffectConstants.CLICK);
+                    // delegate clicked
+                    delegate.didPressChosenReaction(this);
+                    reactionsChosenPressed = false;
+                }
+            }
+        }
+        return result;
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (currentMessageObject == null || !delegate.canPerformActions() || animationRunning) {
@@ -2145,9 +2176,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         backgroundDrawable.setTouchCoords(lastTouchX, lastTouchY);
 
         boolean result = checkTextBlockMotionEvent(event);
-
         if (!result) {
             result = checkPinchToZoom(event);
+        }
+        if (!result) {
+            result = checkChosenReactionMotionEvent(event);
         }
         if (!result) {
             result = checkDateMotionEvent(event);
@@ -2199,6 +2232,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             imagePressed = false;
             timePressed = false;
             gamePreviewPressed = false;
+            reactionsChosenPressed = false;
             instantPressed = instantButtonPressed = commentButtonPressed = false;
             if (Build.VERSION.SDK_INT >= 21) {
                 for (int a = 0; a < selectorDrawable.length; a++) {
@@ -3305,6 +3339,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             additionalTimeOffsetY = 0;
             miniButtonPressed = 0;
             pressedBotButton = -1;
+            reactionsChosenPressed = false;
             pressedVoteButton = -1;
             pollHintPressed = false;
             psaHintPressed = false;
@@ -6291,11 +6326,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return true;
         }
         resetPressedLink(-1);
-        if (buttonPressed != 0 || miniButtonPressed != 0 || videoButtonPressed != 0 || pressedBotButton != -1) {
+        if (buttonPressed != 0 || miniButtonPressed != 0 || videoButtonPressed != 0 || pressedBotButton != -1 || reactionsChosenPressed) {
             buttonPressed = 0;
             miniButtonPressed = 0;
             videoButtonPressed = 0;
             pressedBotButton = -1;
+            reactionsChosenPressed = false;
             invalidate();
         }
 
@@ -12012,6 +12048,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
             }
         }
+        if (getMessageObject().reactionForPersonalChosen == null) {
+            reactionsChosen.setAlpha(0);
+        } else {
+            reactionsChosen.setAlpha(transitionParams.chosenReactionAlpha);
+        }
+        if (getMessageObject().reactionForPersonalNotChosen == null) {
+            reactionsNotChosen.setAlpha(0);
+        }
         if (getTransitionParams().animateDrawingTimeAlpha) {
             alpha *= getTransitionParams().animateChangeProgress;
         }
@@ -12146,7 +12190,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             canvas.save();
             canvas.translate(x1, y1);
             reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
-            reactionsChosen.setAlpha(transitionParams.chosenReactionAlpha);
             reactionsChosen.draw(canvas);
             this.reactionsChosenX = reactionsChosenX + x1;
             this.reactionsChosenY = y1;
@@ -12225,7 +12268,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     float drawTimeY = layoutHeight - AndroidUtilities.dp(pinnedBottom || pinnedTop ? 7.5f : 6.5f) - timeLayout.getHeight() + timeYOffset;
                     canvas.translate(timeX, drawTimeY);
                     reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
-                    reactionsChosen.setAlpha(transitionParams.chosenReactionAlpha);
                     reactionsChosen.draw(canvas);
 
                     this.reactionsChosenX = reactionsChosenX + timeX;
@@ -12242,7 +12284,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     Theme.chat_timePaint.setAlpha((int) (oldAlpha * (1f - transitionParams.animateChangeProgress)));
                     transitionParams.animateTimeLayout.draw(canvas);
                     reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
-                    reactionsChosen.setAlpha(transitionParams.chosenReactionAlpha);
                     reactionsChosen.draw(canvas);
                     this.reactionsChosenX = reactionsChosenX + translateX;
                     this.reactionsChosenY = translateY;
@@ -12261,7 +12302,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     Theme.chat_timePaint.setAlpha(oldAlpha);
 
                     reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
-                    reactionsChosen.setAlpha(transitionParams.chosenReactionAlpha);
                     reactionsChosen.draw(canvas);
                     this.reactionsChosenX = timeX + reactionsChosenX;
                     this.reactionsChosenY = drawTimeY;
@@ -12276,7 +12316,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 canvas.save();
                 canvas.translate(timeX, drawTimeY);
                 reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
-                reactionsChosen.setAlpha(transitionParams.chosenReactionAlpha);
                 reactionsChosen.draw(canvas);
                 this.reactionsChosenX = timeX + reactionsChosenX;
                 this.reactionsChosenY = drawTimeY + additionalTranslate1;

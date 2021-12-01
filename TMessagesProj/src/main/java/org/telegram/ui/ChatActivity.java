@@ -202,6 +202,7 @@ import org.telegram.ui.Components.ExtendedGridLayoutManager;
 import org.telegram.ui.Components.FireworksOverlay;
 import org.telegram.ui.Components.ForwardingPreviewView;
 import org.telegram.ui.Components.FragmentContextView;
+import org.telegram.ui.Components.FullEmojiDisappearView;
 import org.telegram.ui.Components.FullEmojiView;
 import org.telegram.ui.Components.GigagroupConvertAlert;
 import org.telegram.ui.Components.HideViewAfterAnimation;
@@ -20420,6 +20421,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     ActionBarPopupWindow fullEmojiPopupWindow;
     private void showFullEmojiView(FrameLayout emojiView, EmojisScrollComponent emojisScroll, MessageObject messageObject) {
         ChatMessageCell cell = chatAdapter.getRowWithMessageObject(messageObject);
+        if (cell == null) {
+            return;
+        }
         float statusBarHeight = (Build.VERSION.SDK_INT >= 21 && !inBubbleMode ? AndroidUtilities.statusBarHeight : 0);
         fullEmojiView = new FullEmojiView(contentView.getContext());
         fullEmojiView.configure((EmojisScrollComponent.EmojisCell) emojiView, emojisScroll, statusBarHeight);
@@ -20428,10 +20432,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         fullEmojiView.setLayoutParams(layoutParams);
         fullEmojiPopupWindow.showAtLocation(getParentActivity().getWindow().getDecorView(), Gravity.LEFT | Gravity.TOP, 0, 0);
         fullEmojiView.setDelegate(() -> {
-            if (cell == null) {
-                fullEmojiPopupWindow.dismiss(false);
-                return;
-            }
             cell.getTransitionParams().chosenReactionAlpha = 1;
             cell.invalidate();
             AndroidUtilities.runOnUIThread(() -> {
@@ -20512,6 +20512,59 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
         });
          */
+    }
+
+    FullEmojiDisappearView fullEmojiDisappearView;
+    ActionBarPopupWindow fullEmojiDisappearPopupWindow;
+
+    private void showFullEmojiDisappearView(ChatMessageCell cell) {
+        String reaction = cell.getMessageObject().reactionForPersonalChosen;
+        TLRPC.Document doc = null;
+        ArrayList<TLRPC.TL_availableReaction> availableReactions = getAccountInstance().getReactionsManager().availableReactions;
+        for(int i = 0; i < availableReactions.size(); i++) {
+            if (availableReactions.get(i).reaction.equals(reaction)) {
+                doc = availableReactions.get(i).static_icon;
+                break;
+            }
+        }
+        if (doc == null) { return; }
+        float statusBarHeight = (Build.VERSION.SDK_INT >= 21 && !inBubbleMode ? AndroidUtilities.statusBarHeight : 0);
+        fullEmojiDisappearView = new FullEmojiDisappearView(contentView.getContext());
+        fullEmojiDisappearView.configure(doc, statusBarHeight);
+        fullEmojiDisappearPopupWindow = new ActionBarPopupWindow(fullEmojiDisappearView, getParentActivity().getWindow().getDecorView().getWidth(), getParentActivity().getWindow().getDecorView().getHeight());
+
+        FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT);
+        fullEmojiDisappearView.setLayoutParams(layoutParams);
+        fullEmojiDisappearPopupWindow.showAtLocation(getParentActivity().getWindow().getDecorView(), Gravity.LEFT | Gravity.TOP, 0, 0);
+        fullEmojiDisappearView.setDelegate(new FullEmojiDisappearView.FullEmojiDisappearViewDelegate() {
+            @Override
+            public void shouldRemoveChosenReaction() {
+                cell.getMessageObject().reactionForPersonalChosen = null;
+                cell.getMessageObject().forceUpdate = true;
+                cell.getTransitionParams().chosenReactionAlpha = 1;
+                chatAdapter.updateRowWithMessageObject(cell.getMessageObject(), false);
+            }
+
+            @Override
+            public void onEnd() {
+                fullEmojiDisappearPopupWindow.dismiss(false);
+            }
+
+            @Override
+            public void dimOriginal() {
+                cell.getTransitionParams().chosenReactionAlpha = 0;
+                cell.invalidate();
+            }
+        });
+        boolean isShownRight = cell.getMessageObject().isOutOwner();
+        fullEmojiDisappearView.show(cell.getLocationInformationOfChosenReaction(),isShownRight);
+
+        if (scrimPopupWindow != null) {
+            scrimPopupWindow.dismiss();
+            scrimPopupWindow = null;
+            menuDeleteItem = null;
+            scrimPopupWindowItems = null;
+        }
     }
 
     private void startEditingMessageObject(MessageObject messageObject) {
@@ -23340,6 +23393,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                     public boolean isLandscape() {
                         return contentView.getMeasuredWidth() > contentView.getMeasuredHeight();
+                    }
+
+                    @Override
+                    public void didPressChosenReaction(ChatMessageCell cell) {
+                        showFullEmojiDisappearView(cell);
                     }
                 });
                 if (currentEncryptedChat == null) {
