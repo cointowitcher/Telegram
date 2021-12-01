@@ -758,6 +758,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private boolean replyPressed;
     private TLRPC.PhotoSize currentReplyPhoto;
 
+    public float chosenReactionAlpha = 1;
+
     private int drawSideButton;
     private boolean sideButtonPressed;
     private float sideStartX;
@@ -12051,7 +12053,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (getMessageObject().reactionForPersonalChosen == null) {
             reactionsChosen.setAlpha(0);
         } else {
-            reactionsChosen.setAlpha(transitionParams.chosenReactionAlpha);
+            reactionsChosen.setAlpha(chosenReactionAlpha);
         }
         if (getMessageObject().reactionForPersonalNotChosen == null) {
             reactionsNotChosen.setAlpha(0);
@@ -14880,7 +14882,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         float lastForwardNameX;
         int animateForwardNameWidth;
         int lastForwardNameWidth;
-        public float chosenReactionAlpha = 1;
 
         public void recordDrawingState() {
             wasDraw = true;

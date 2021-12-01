@@ -20419,6 +20419,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
     FullEmojiView fullEmojiView;
     ActionBarPopupWindow fullEmojiPopupWindow;
+    String newReaction;
     private void showFullEmojiView(FrameLayout emojiView, EmojisScrollComponent emojisScroll, MessageObject messageObject) {
         ChatMessageCell cell = chatAdapter.getRowWithMessageObject(messageObject);
         if (cell == null) {
@@ -20432,8 +20433,15 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         fullEmojiView.setLayoutParams(layoutParams);
         fullEmojiPopupWindow.showAtLocation(getParentActivity().getWindow().getDecorView(), Gravity.LEFT | Gravity.TOP, 0, 0);
         fullEmojiView.setDelegate(() -> {
-            cell.getTransitionParams().chosenReactionAlpha = 1;
-            cell.invalidate();
+            if (!messageObject.reactionForPersonalChosen.equals(newReaction)) {
+                messageObject.forceUpdate = true;
+                messageObject.addReactionsForPersonalChat(newReaction, true);
+                cell.chosenReactionAlpha = 1;
+                chatAdapter.updateRowWithMessageObject(messageObject, false);
+            } else {
+                cell.chosenReactionAlpha = 1;
+                cell.invalidate();
+            }
             AndroidUtilities.runOnUIThread(() -> {
                 fullEmojiPopupWindow.dismiss(false);
             }, 50);
@@ -20445,17 +20453,29 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             scrimPopupWindowItems = null;
         }
         String reaction = ((EmojisScrollComponent.EmojisCell) emojiView).reaction.reaction;
-        cell.getTransitionParams().chosenReactionAlpha = 0;
-        cell.invalidate();
+        if (messageObject.reactionForPersonalChosen != null) {
+            ValueAnimator animator = ValueAnimator.ofFloat(1, 0);
+            animator.setDuration(1000);
+            animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    cell.chosenReactionAlpha = (float)animation.getAnimatedValue();
+                    cell.invalidate();
+                }
+            });
+            animator.start();
+        }
         AndroidUtilities.runOnUIThread(() -> {
                 getSendMessagesHelper().sendReaction(messageObject, reaction, ChatActivity.this, (pair) -> {
                     Pair<TLObject, TLRPC.TL_error> obj = (Pair<TLObject, TLRPC.TL_error>) pair;
                     if (obj.first != null) {
                         AndroidUtilities.runOnUIThread(() -> {
                             messageObject.forceUpdate = true;
-                            messageObject.addReactionsForPersonalChat(reaction, true);
-                            chatAdapter.updateRowWithMessageObject(messageObject, false);
-                            cell.invalidate();
+                            newReaction = reaction;
+                            if (messageObject.reactionForPersonalChosen == null) {
+                                messageObject.addReactionsForPersonalChat(reaction, true);
+                                chatAdapter.updateRowWithMessageObject(messageObject, false);
+                            }
                             AndroidUtilities.runOnUIThread(() -> {
                                 int[] coords = cell.getLocationInformationOfChosenReaction();
                                 fullEmojiView.disappear(coords);
@@ -20541,7 +20561,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             public void shouldRemoveChosenReaction() {
                 cell.getMessageObject().reactionForPersonalChosen = null;
                 cell.getMessageObject().forceUpdate = true;
-                cell.getTransitionParams().chosenReactionAlpha = 1;
+                cell.chosenReactionAlpha = 1;
                 chatAdapter.updateRowWithMessageObject(cell.getMessageObject(), false);
             }
 
@@ -20552,7 +20572,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
             @Override
             public void dimOriginal() {
-                cell.getTransitionParams().chosenReactionAlpha = 0;
+                cell.chosenReactionAlpha = 0;
                 cell.invalidate();
             }
         });
