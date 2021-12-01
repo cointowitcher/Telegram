@@ -298,7 +298,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private final static int DOCUMENT_ATTACH_TYPE_WALLPAPER = 8;
     private final static int DOCUMENT_ATTACH_TYPE_THEME = 9;
 
-    private final static float reactionSmallImageSize = 15.2727f;
+    public final static float reactionSmallImageSize = 15.2727f;
     private final static float reactionSmallSpacing = 4.21f;
 
     private static class BotButton {
@@ -694,7 +694,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private ImageReceiver reactionsChosen;
     private ImageReceiver reactionsNotChosen;
 
+    private float reactionsChosenX;
+    private float reactionsChosenY;
+
     private int getReactionsAdditionalWidth(MessageObject messageObject) {
+        int[] loc = new int[2];
+        getLocationInWindow(loc);
         if (messageObject.reactionForPersonalChosen == null && messageObject.reactionForPersonalNotChosen == null) {
             return 0;
         }
@@ -713,6 +718,17 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
         int reactionsAdditionalWidthDp = AndroidUtilities.dp(reactionsAdditionalWidth);
         return reactionsAdditionalWidthDp;
+    }
+
+    public int[] getLocationInformationOfChosenReaction() { // (w,h,x,y)
+        int[] args = new int[4];
+        int[] loc = new int[2];
+        getLocationInWindow(loc);
+        args[0] = AndroidUtilities.dp(reactionSmallImageSize);
+        args[1] = AndroidUtilities.dp(reactionSmallImageSize);
+        args[2] = loc[0] + (int)reactionsChosenX;
+        args[3] = loc[1] + (int)reactionsChosenY;
+        return args;
     }
 
     private int getReactionsAdditionalWidth() {
@@ -12129,6 +12145,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             canvas.translate(x1, y1);
             reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
             reactionsChosen.draw(canvas);
+            this.reactionsChosenX = reactionsChosenX + x1;
+            this.reactionsChosenY = y1;
 
             reactionsNotChosen.setImageCoords(reactionsNotChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
             reactionsNotChosen.draw(canvas);
@@ -12206,16 +12224,23 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
                     reactionsChosen.draw(canvas);
 
+                    this.reactionsChosenX = reactionsChosenX + timeX;
+                    this.reactionsChosenY = drawTimeY;
+
                     reactionsNotChosen.setImageCoords(reactionsNotChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
                     reactionsNotChosen.draw(canvas);
                 } else {
                     int oldAlpha = Theme.chat_timePaint.getAlpha();
                     canvas.save();
-                    canvas.translate(transitionParams.animateFromTimeX + additionalX, layoutHeight - AndroidUtilities.dp(pinnedBottom || pinnedTop ? 7.5f : 6.5f) - timeLayout.getHeight() + timeYOffset);
+                    float translateX = transitionParams.animateFromTimeX + additionalX;
+                    float translateY = layoutHeight - AndroidUtilities.dp(pinnedBottom || pinnedTop ? 7.5f : 6.5f) - timeLayout.getHeight() + timeYOffset;
+                    canvas.translate(translateX, translateY);
                     Theme.chat_timePaint.setAlpha((int) (oldAlpha * (1f - transitionParams.animateChangeProgress)));
                     transitionParams.animateTimeLayout.draw(canvas);
                     reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
                     reactionsChosen.draw(canvas);
+                    this.reactionsChosenX = reactionsChosenX + translateX;
+                    this.reactionsChosenY = translateY;
 
                     reactionsNotChosen.setImageCoords(reactionsNotChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
                     reactionsNotChosen.draw(canvas);
@@ -12232,6 +12257,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
                     reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
                     reactionsChosen.draw(canvas);
+                    this.reactionsChosenX = timeX + reactionsChosenX;
+                    this.reactionsChosenY = drawTimeY;
 
                     reactionsNotChosen.setImageCoords(reactionsNotChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
                     reactionsNotChosen.draw(canvas);
@@ -12244,6 +12271,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 canvas.translate(timeX, drawTimeY);
                 reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
                 reactionsChosen.draw(canvas);
+                this.reactionsChosenX = timeX + reactionsChosenX;
+                this.reactionsChosenY = drawTimeY;
 
                 reactionsNotChosen.setImageCoords(reactionsNotChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
                 reactionsNotChosen.draw(canvas);

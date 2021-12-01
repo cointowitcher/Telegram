@@ -20442,6 +20442,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             messageObject.forceUpdate = true;
                             messageObject.addReactionsForPersonalChat(reaction, true);
                             chatAdapter.updateRowWithMessageObject(messageObject, false);
+                            int[] coords = chatAdapter.getRowWithMessageObject(messageObject).getLocationInformationOfChosenReaction();
+                            AndroidUtilities.runOnUIThread(() -> {
+                                fullEmojiView.disappear(coords);
+                            }, 1000);
                         });
                     }
                 });
@@ -20467,7 +20471,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             public void run() {
                 fullEmojiPopupWindow.dismiss(false);
             }
-        }, 4500);
+        }, 10000);
 //        (getParentActivity().getWindow()).addContentView(fullEmojiView, layoutParams);
 //        getParentActivity().getWindow().addContentView(fullEmojiView, layoutParams);
         /*
@@ -23987,6 +23991,21 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     }
                 }
             }
+        }
+
+        public ChatMessageCell getRowWithMessageObject(MessageObject messageObject) {
+            int count = chatListView.getChildCount();
+            for (int a = 0; a < count; a++) {
+                View child = chatListView.getChildAt(a);
+                if (child instanceof ChatMessageCell) {
+                    ChatMessageCell cell = (ChatMessageCell) child;
+                    if (cell.getMessageObject() == messageObject && !cell.isAdminLayoutChanged()) {
+                        cell.setMessageObject(messageObject, cell.getCurrentMessagesGroup(), cell.isPinnedBottom(), cell.isPinnedTop());
+                        return cell;
+                    }
+                }
+            };
+            return null;
         }
 
         public View updateRowWithMessageObject(MessageObject messageObject, boolean allowInPlace) {
