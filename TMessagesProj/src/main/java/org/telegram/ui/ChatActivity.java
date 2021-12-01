@@ -20417,6 +20417,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             chatActivityEnterView.hideBotCommands();
         }
     }
+
     FullEmojiView fullEmojiView;
     ActionBarPopupWindow fullEmojiPopupWindow;
     String newReaction;
@@ -20466,72 +20467,23 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             animator.start();
         }
         AndroidUtilities.runOnUIThread(() -> {
-                getSendMessagesHelper().sendReaction(messageObject, reaction, ChatActivity.this, (pair) -> {
-                    Pair<TLObject, TLRPC.TL_error> obj = (Pair<TLObject, TLRPC.TL_error>) pair;
-                    if (obj.first != null) {
-                        AndroidUtilities.runOnUIThread(() -> {
-                            messageObject.forceUpdate = true;
-                            newReaction = reaction;
-                            if (messageObject.reactionForPersonalChosen == null) {
-                                messageObject.addReactionsForPersonalChat(reaction, true);
-                                chatAdapter.updateRowWithMessageObject(messageObject, false);
-                            }
-                            AndroidUtilities.runOnUIThread(() -> {
-                                int[] coords = cell.getLocationInformationOfChosenReaction();
-                                fullEmojiView.disappear(coords);
-                            }, 1000);
-                        });
+            getReactionsManager().sendReaction(messageObject, reaction, ChatActivity.this, (successful) -> {
+                if (!successful) { return; }
+                AndroidUtilities.runOnUIThread(() -> {
+                    messageObject.forceUpdate = true;
+                    newReaction = reaction;
+                    if (messageObject.reactionForPersonalChosen == null) {
+                        messageObject.addReactionsForPersonalChat(reaction, true);
+                        chatAdapter.updateRowWithMessageObject(messageObject, false);
                     }
+                    AndroidUtilities.runOnUIThread(() -> {
+                        int[] coords = cell.getLocationInformationOfChosenReaction();
+                        fullEmojiView.disappear(coords);
+                    }, 1000);
                 });
-//                TLRPC.TL_messages_sendReaction sendReaction = new TLRPC.TL_messages_sendReaction();
-//                sendReaction.reaction = reaction;
-//                sendReaction.msg_id = messageObject.getId();
-//                sendReaction.flags = 1;
-//                sendReaction.peer = getMessagesController().getInputPeer(getMessagesController().getPeer(dialog_id));
-//                getConnectionsManager().sendRequest(sendReaction, (resp, error) -> {
-//                    if (error == null) {
-//                        messageObject.addReactionsForPersonalChat(reaction, true);
-//                        messageObject.forceUpdate = true;
-//                        AndroidUtilities.runOnUIThread(() -> {
-////                            updateVisibleRows();
-//                            chatAdapter.updateRowWithMessageObject(messageObject, false);
-//                        });
-////                        chatAdapter.updateRowWithMessageObject(messageObject, false);
-//                    }
-//                });
+
+            });
             }, 1000);
-//        (getParentActivity().getWindow()).addContentView(fullEmojiView, layoutParams);
-//        getParentActivity().getWindow().addContentView(fullEmojiView, layoutParams);
-        /*
-        sendMessageAsListView = new SendMessageAsListView(contentView.getContext());
-        FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrameWithoutDp(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM,0, 0, 0, chatActivityEnterView.getHeight() - AndroidUtilities.dp(0.5f));
-        getParentActivity().getWindow().addContentView(sendMessageAsListView, layoutParams);
-        sendMessageAsListView.setup(v -> {
-            closeSendAsChat();
-        });
-        keyboardHeight = contentView.getKeyboardHeight() + chatActivityEnterView.getEmojiPadding();
-        sendMessageAsListView.setTranslationY(-keyboardHeight);
-        contentView.getViewTreeObserver().addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                if (contentView != null) {
-                    int newKeyboardHeight = contentView.getKeyboardHeight() + chatActivityEnterView.getEmojiPadding();
-                    if (keyboardHeight == newKeyboardHeight) {
-                        return;
-                    }
-                    keyboardHeight = newKeyboardHeight;
-                    AnimatorSet animatorSet = new AnimatorSet();
-                    animatorSet.playTogether(
-                            ObjectAnimator.ofFloat(sendMessageAsListView, "translationY", -newKeyboardHeight)
-                    );
-                    animatorSet.setInterpolator(AdjustPanLayoutHelper.keyboardInterpolator);
-                    animatorSet.setDuration(AdjustPanLayoutHelper.keyboardDuration);
-                    animatorSet.start();
-                    Log.d("sergeyt", String.valueOf(keyboardHeight));
-                }
-            }
-        });
-         */
     }
 
     FullEmojiDisappearView fullEmojiDisappearView;

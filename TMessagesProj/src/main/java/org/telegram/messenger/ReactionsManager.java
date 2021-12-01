@@ -1,10 +1,14 @@
 package org.telegram.messenger;
 
+import android.util.Pair;
+
 import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.SerializedData;
+import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.ChatActivity;
 
 import java.util.ArrayList;
 
@@ -45,26 +49,23 @@ public class ReactionsManager {
         });
     }
 
-    public void doSomething() {
-//        TLRPC.TL_messages_getAvailableReactions req = new TLRPC.TL_messages_getAvailableReactions();
-//        accountInstance.getConnectionsManager().sendRequest(req, (response, error) -> {
-//            if (error == null) {
-////                ArrayList<SerializedData> cache = new ArrayList<>();
-////                TLRPC.TL_messages_availableReactions resp = (TLRPC.TL_messages_availableReactions)response;
-////                for(int i = 0; i < resp.reactions.size(); i++) {
-////                    SerializedData data = new SerializedData();
-////                    TLRPC.TL_availableReaction rec = resp.reactions.get(i);
-////                    rec.serializeToStream(data);
-////
-////                    cache.add(data);
-////                }
-//                Log.e("serg", "w");
-//            }
-//        });
+    public void sendReaction(MessageObject messageObject, String reaction, ChatActivity parent, SendReactionResponse response) {
+        accountInstance.getSendMessagesHelper().sendReaction(messageObject, reaction, parent, (pair) -> {
+            Pair<TLObject, TLRPC.TL_error> obj = (Pair<TLObject, TLRPC.TL_error>) pair;
+            response.didSend(obj.first != null);
+        });
     }
+
+    // MARK: Configuring MessageObject
+
 
     // MARK: - Helper
     private ConnectionsManager getConnectionsManager() {
         return accountInstance.getConnectionsManager();
+    }
+
+    @FunctionalInterface
+    public interface SendReactionResponse {
+        void didSend(boolean successful);
     }
 }
