@@ -12019,8 +12019,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             Theme.chat_timePaint.setAlpha((int) (Theme.chat_timePaint.getAlpha() * alpha));
         }
         canvas.save();
+        int additionalTranslate1 = 0;
         if (drawPinnedBottom && !shouldDrawTimeOnMedia()) {
-            canvas.translate(0, AndroidUtilities.dp(2));
+            additionalTranslate1 = AndroidUtilities.dp(2);
+            canvas.translate(0, additionalTranslate1);
         }
         boolean bigRadius = false;
         float layoutHeight = this.layoutHeight + transitionParams.deltaBottom;
@@ -12144,6 +12146,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             canvas.save();
             canvas.translate(x1, y1);
             reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
+            reactionsChosen.setAlpha(transitionParams.chosenReactionAlpha);
             reactionsChosen.draw(canvas);
             this.reactionsChosenX = reactionsChosenX + x1;
             this.reactionsChosenY = y1;
@@ -12222,6 +12225,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     float drawTimeY = layoutHeight - AndroidUtilities.dp(pinnedBottom || pinnedTop ? 7.5f : 6.5f) - timeLayout.getHeight() + timeYOffset;
                     canvas.translate(timeX, drawTimeY);
                     reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
+                    reactionsChosen.setAlpha(transitionParams.chosenReactionAlpha);
                     reactionsChosen.draw(canvas);
 
                     this.reactionsChosenX = reactionsChosenX + timeX;
@@ -12238,6 +12242,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     Theme.chat_timePaint.setAlpha((int) (oldAlpha * (1f - transitionParams.animateChangeProgress)));
                     transitionParams.animateTimeLayout.draw(canvas);
                     reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
+                    reactionsChosen.setAlpha(transitionParams.chosenReactionAlpha);
                     reactionsChosen.draw(canvas);
                     this.reactionsChosenX = reactionsChosenX + translateX;
                     this.reactionsChosenY = translateY;
@@ -12256,6 +12261,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     Theme.chat_timePaint.setAlpha(oldAlpha);
 
                     reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
+                    reactionsChosen.setAlpha(transitionParams.chosenReactionAlpha);
                     reactionsChosen.draw(canvas);
                     this.reactionsChosenX = timeX + reactionsChosenX;
                     this.reactionsChosenY = drawTimeY;
@@ -12270,9 +12276,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 canvas.save();
                 canvas.translate(timeX, drawTimeY);
                 reactionsChosen.setImageCoords(reactionsChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
+                reactionsChosen.setAlpha(transitionParams.chosenReactionAlpha);
                 reactionsChosen.draw(canvas);
                 this.reactionsChosenX = timeX + reactionsChosenX;
-                this.reactionsChosenY = drawTimeY;
+                this.reactionsChosenY = drawTimeY + additionalTranslate1;
 
                 reactionsNotChosen.setImageCoords(reactionsNotChosenX, 0, reactionsWidthHeight, reactionsWidthHeight);
                 reactionsNotChosen.draw(canvas);
@@ -14834,6 +14841,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         float lastForwardNameX;
         int animateForwardNameWidth;
         int lastForwardNameWidth;
+        public float chosenReactionAlpha = 1;
 
         public void recordDrawingState() {
             wasDraw = true;

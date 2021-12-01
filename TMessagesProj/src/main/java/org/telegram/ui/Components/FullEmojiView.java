@@ -174,6 +174,11 @@ public class FullEmojiView extends FrameLayout {
     }
 
     public void disappear(int[] endLocation) {
+//        View v4 = new View(getContext());
+//        v4.setBackgroundColor(0x99763961);
+//        v4.setLayoutParams(LayoutHelper.createFrameWithoutDp(endLocation[0], endLocation[1], Gravity.TOP | Gravity.LEFT, endLocation[2], endLocation[3] - (int)statusBarHeight, 0, 0));
+//        addView(v4);
+
         v3.addView(staticImageView);
         int v3Size = AndroidUtilities.dp(ChatMessageCell.reactionSmallImageSize);
         int v3Left = (int)endX + v3Size;
@@ -184,7 +189,6 @@ public class FullEmojiView extends FrameLayout {
         v3.setScaleX(scaleV3);
         v3.setScaleY(scaleV3);
         v3.setAlpha(0);
-        v3.setBackgroundColor(0x99782312);
 
         endLocation[3] -= (int)statusBarHeight;
         this.endLocation = endLocation;
@@ -242,7 +246,8 @@ public class FullEmojiView extends FrameLayout {
         animatorSet.start();
     }
 
-    interface FullEmojiViewDelegate {
+    @FunctionalInterface
+    public interface FullEmojiViewDelegate {
         void finishedAnimating();
     }
 }

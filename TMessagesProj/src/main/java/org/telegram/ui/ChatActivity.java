@@ -20419,6 +20419,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     FullEmojiView fullEmojiView;
     ActionBarPopupWindow fullEmojiPopupWindow;
     private void showFullEmojiView(FrameLayout emojiView, EmojisScrollComponent emojisScroll, MessageObject messageObject) {
+        ChatMessageCell cell = chatAdapter.getRowWithMessageObject(messageObject);
         float statusBarHeight = (Build.VERSION.SDK_INT >= 21 && !inBubbleMode ? AndroidUtilities.statusBarHeight : 0);
         fullEmojiView = new FullEmojiView(contentView.getContext());
         fullEmojiView.configure((EmojisScrollComponent.EmojisCell) emojiView, emojisScroll, statusBarHeight);
@@ -20426,7 +20427,17 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT);
         fullEmojiView.setLayoutParams(layoutParams);
         fullEmojiPopupWindow.showAtLocation(getParentActivity().getWindow().getDecorView(), Gravity.LEFT | Gravity.TOP, 0, 0);
-
+        fullEmojiView.setDelegate(() -> {
+            if (cell == null) {
+                fullEmojiPopupWindow.dismiss(false);
+                return;
+            }
+            cell.getTransitionParams().chosenReactionAlpha = 1;
+            cell.invalidate();
+            AndroidUtilities.runOnUIThread(() -> {
+                fullEmojiPopupWindow.dismiss(false);
+            }, 50);
+        });
         if (scrimPopupWindow != null) {
             scrimPopupWindow.dismiss();
             scrimPopupWindow = null;
@@ -20434,6 +20445,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             scrimPopupWindowItems = null;
         }
         String reaction = ((EmojisScrollComponent.EmojisCell) emojiView).reaction.reaction;
+        cell.getTransitionParams().chosenReactionAlpha = 0;
+        cell.invalidate();
         AndroidUtilities.runOnUIThread(() -> {
                 getSendMessagesHelper().sendReaction(messageObject, reaction, ChatActivity.this, (pair) -> {
                     Pair<TLObject, TLRPC.TL_error> obj = (Pair<TLObject, TLRPC.TL_error>) pair;
@@ -20442,8 +20455,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                             messageObject.forceUpdate = true;
                             messageObject.addReactionsForPersonalChat(reaction, true);
                             chatAdapter.updateRowWithMessageObject(messageObject, false);
-                            int[] coords = chatAdapter.getRowWithMessageObject(messageObject).getLocationInformationOfChosenReaction();
+                            cell.invalidate();
                             AndroidUtilities.runOnUIThread(() -> {
+                                int[] coords = cell.getLocationInformationOfChosenReaction();
                                 fullEmojiView.disappear(coords);
                             }, 1000);
                         });
@@ -20466,12 +20480,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 //                    }
 //                });
             }, 1000);
-        AndroidUtilities.runOnUIThread(new Runnable() {
-            @Override
-            public void run() {
-                fullEmojiPopupWindow.dismiss(false);
-            }
-        }, 10000);
 //        (getParentActivity().getWindow()).addContentView(fullEmojiView, layoutParams);
 //        getParentActivity().getWindow().addContentView(fullEmojiView, layoutParams);
         /*
@@ -24000,7 +24008,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 if (child instanceof ChatMessageCell) {
                     ChatMessageCell cell = (ChatMessageCell) child;
                     if (cell.getMessageObject() == messageObject && !cell.isAdminLayoutChanged()) {
-                        cell.setMessageObject(messageObject, cell.getCurrentMessagesGroup(), cell.isPinnedBottom(), cell.isPinnedTop());
                         return cell;
                     }
                 }
