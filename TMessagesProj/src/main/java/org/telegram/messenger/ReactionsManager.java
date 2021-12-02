@@ -11,6 +11,7 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ChatActivity;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 
 public class ReactionsManager {
     private static volatile ReactionsManager[] Instance = new ReactionsManager[UserConfig.MAX_ACCOUNT_COUNT];
@@ -29,6 +30,9 @@ public class ReactionsManager {
 
     private int currentAccount;
     private AccountInstance accountInstance;
+    private long lastDate = 0;
+
+    private int hash = -1;
 
     public ArrayList<TLRPC.TL_availableReaction> availableReactions;
 
@@ -40,29 +44,48 @@ public class ReactionsManager {
     }
 
     public void loadReactions() {
+        if (lastDate != 0 && Calendar.getInstance().getTime().getTime() - lastDate > 3600 * 1000) {
+            return;
+        }
         TLRPC.TL_messages_getAvailableReactions req = new TLRPC.TL_messages_getAvailableReactions();
+        if (hash != -1) {
+            req.hash = hash;
+        }
         getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (error == null) {
+            if (response == null) { return; }
+            if (response instanceof TLRPC.TL_messages_availableReactionsNotModified) {
+            }
+            lastDate = Calendar.getInstance().getTime().getTime();
+            if (response instanceof TLRPC.TL_messages_availableReactions) {
                 TLRPC.TL_messages_availableReactions resp = (TLRPC.TL_messages_availableReactions)response;
+                this.hash = resp.hash;
                 availableReactions = resp.reactions;
             }
         });
     }
 
     public void sendReaction(MessageObject messageObject, String reaction, ChatActivity parent, SendReactionResponse response) {
-        accountInstance.getSendMessagesHelper().sendReaction(messageObject, reaction, parent, (pair) -> {
+        getSendMessagesHelper().sendReaction(messageObject, reaction, parent, (pair) -> {
             Pair<TLObject, TLRPC.TL_error> obj = (Pair<TLObject, TLRPC.TL_error>) pair;
             response.didSend(obj.first != null);
         });
     }
 
-    // MARK: Configuring MessageObject
+    public void getMessagesReactions(long chatId, ArrayList<Integer> ids) {
+        TLRPC.TL_messages_getMessagesReactions req = new TLRPC.TL_messages_getMessagesReactions();
+        req.peer = getMessagesController().getInputPeer(chatId);
+        req.id = ids;
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            TLRPC.TL_updates updates = (TLRPC.TL_updates) response;
+            getMessagesController().processUpdateArray(updates.updates, new ArrayList<>(), new ArrayList<>(), false, updates.date);
+        });
+    }
 
 
     // MARK: - Helper
-    private ConnectionsManager getConnectionsManager() {
-        return accountInstance.getConnectionsManager();
-    }
+    private ConnectionsManager getConnectionsManager() { return accountInstance.getConnectionsManager(); }
+    private MessagesController getMessagesController() { return accountInstance.getMessagesController(); }
+    private SendMessagesHelper getSendMessagesHelper() { return accountInstance.getSendMessagesHelper(); }
 
     @FunctionalInterface
     public interface SendReactionResponse {

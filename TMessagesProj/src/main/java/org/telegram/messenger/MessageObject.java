@@ -2126,11 +2126,12 @@ public class MessageObject {
             }
         }
     }
-
+    
     public static void updateReactions(TLRPC.Message message, TLRPC.TL_messageReactions reactions) {
         if (message == null || reactions == null) {
             return;
         }
+        // Let's assume the code below works properly
         if (reactions.min && message.reactions != null) {
             for (int a = 0, N = message.reactions.results.size(); a < N; a++) {
                 TLRPC.TL_reactionCount reaction = message.reactions.results.get(a);

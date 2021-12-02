@@ -697,6 +697,7 @@ public class MessagesController extends BaseController implements NotificationCe
 
     public MessagesController(int num) {
         super(num);
+        getAccountInstance().getReactionsManager();
         currentAccount = num;
         ImageLoader.getInstance();
         getMessagesStorage();
@@ -12552,6 +12553,9 @@ public class MessagesController extends BaseController implements NotificationCe
                         message.media_unread = false;
                         message.out = true;
                     }
+                }
+                if (message.reactions != null) {
+                    getMessagesStorage().updateMessageReactions(MessageObject.getPeerId(message.peer_id), message.id, message.reactions);
                 }
                 if (!message.out && message.from_id instanceof TLRPC.TL_peerUser && message.from_id.user_id == clientUserId) {
                     message.out = true;

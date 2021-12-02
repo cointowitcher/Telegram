@@ -254,6 +254,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -1345,7 +1347,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         startFromVideoTimestamp = arguments.getInt("video_timestamp", -1);
         threadUnreadMessagesCount = arguments.getInt("unread_count", 0);
 
-        getAccountInstance().getReactionsManager().loadReactions();
+        getReactionsManager().loadReactions();
 
         if (startFromVideoTimestamp >= 0) {
             startFromVideoMessageId = startLoadFromMessageId;
@@ -1760,6 +1762,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (chatInviteRunnable != null) {
             AndroidUtilities.cancelRunOnUIThread(chatInviteRunnable);
             chatInviteRunnable = null;
+        }
+        if (pollingTimer != null) {
+            pollingTimer.cancel();
+            pollingTimer = null;
         }
         getNotificationCenter().removePostponeNotificationsCallback(postponeNotificationsWhileLoadingCallback);
         getMessagesController().setLastCreatedDialogId(dialog_id, chatMode == MODE_SCHEDULED, false);
@@ -13997,6 +14003,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
             }
             chatWasReset = false;
+            enablePollingReactionEmojis();
         } else if (id == NotificationCenter.invalidateMotionBackground) {
             if (chatListView != null) {
                 chatListView.invalidateViews();
@@ -20040,7 +20047,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             boolean showMessageSeen = currentChat != null && message.isOutOwner() && message.isSent() && !message.isEditing() && !message.isSending() && !message.isSendError() && !message.isContentUnread() && !message.isUnread() && (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - message.messageOwner.date < 7 * 86400)  && (ChatObject.isMegagroup(currentChat) || !ChatObject.isChannel(currentChat)) && chatInfo != null && chatInfo.participants_count < 50 && !(message.messageOwner.action instanceof TLRPC.TL_messageActionChatJoinedByRequest);
             MessageSeenView messageSeenView = null;
             EmojisScrollComponent scrollComponent = null;
-            if (!getAccountInstance().getReactionsManager().availableReactions.isEmpty()) {
+            if (!getReactionsManager().availableReactions.isEmpty()) {
                 scrollComponent = new EmojisScrollComponent(v.getContext(), null);
                 EmojisScrollComponent finalScrollComponent = scrollComponent;
                 scrollComponent.setupOnClickListener((emojiView) -> {
@@ -20316,7 +20323,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 popupY = inBubbleMode ? 0 : AndroidUtilities.statusBarHeight;
             }
             scrimPopupWindow.showAtLocation(chatListView, Gravity.LEFT | Gravity.TOP, scrimPopupX = popupX, scrimPopupY = popupY);
-            scrollComponent.addItems(getAccountInstance().getReactionsManager().availableReactions);
+            scrollComponent.addItems(getReactionsManager().availableReactions);
             scrimPopupWindow.startAnimation2();
             chatListView.stopScroll();
             chatLayoutManager.setCanScrollVertically(false);
@@ -20418,6 +20425,26 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
     }
 
+    Timer pollingTimer;
+    private void enablePollingReactionEmojis() {
+        if (pollingTimer != null) { return; }
+        pollingTimer = new Timer();
+        pollingTimer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                ArrayList<Integer> ids = new ArrayList<>();
+                for(int i = 0; i < messagesDict[0].size(); i++) {
+                    int key = messagesDict[0].keyAt(i);
+                    MessageObject messageObject = messagesDict[0].get(key);
+                    if ((messageObject.messageOwner.flags & 1 << 20) != 0 && messageObject.messageOwner.reactions != null) {
+                        ids.add(messageObject.getId());
+                    }
+                }
+                getReactionsManager().getMessagesReactions(dialog_id, ids);
+            }
+        }, 0, 15000);
+    }
+
     FullEmojiView fullEmojiView;
     ActionBarPopupWindow fullEmojiPopupWindow;
     String newReaction;
@@ -20492,7 +20519,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private void showFullEmojiDisappearView(ChatMessageCell cell) {
         String reaction = cell.getMessageObject().reactionForPersonalChosen;
         TLRPC.Document doc = null;
-        ArrayList<TLRPC.TL_availableReaction> availableReactions = getAccountInstance().getReactionsManager().availableReactions;
+        ArrayList<TLRPC.TL_availableReaction> availableReactions = getReactionsManager().availableReactions;
         for(int i = 0; i < availableReactions.size(); i++) {
             if (availableReactions.get(i).reaction.equals(reaction)) {
                 doc = availableReactions.get(i).static_icon;
