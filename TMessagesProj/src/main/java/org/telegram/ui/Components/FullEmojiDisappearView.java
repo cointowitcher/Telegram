@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.tgnet.TLRPC;
+import org.telegram.ui.CustomAnimatorListener;
 
 public class FullEmojiDisappearView extends FrameLayout {
     LinearLayout v;
@@ -24,6 +25,14 @@ public class FullEmojiDisappearView extends FrameLayout {
     public FullEmojiDisappearView(@NonNull Context context) {
         super(context);
         createImageView();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        v = null;
+        imageView = null;
+        delegate = null;
     }
 
     public void setDelegate(FullEmojiDisappearViewDelegate delegate) {
@@ -54,82 +63,93 @@ public class FullEmojiDisappearView extends FrameLayout {
         v.setTranslationX(baseTranslationX);
         v.setTranslationY(baseTranslationY);
         v.setAlpha(1);
-
-        ValueAnimator animator = ValueAnimator.ofFloat(0, 1);
-        animator.setDuration(3000);
-        float b = 0;
-        animator.addUpdateListener(valueAnimator -> {
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.setDuration(300);
+        final float direction = isShownInRight ? 1 : -1;
+        final float TRANSLATION = 300;
+        ValueAnimator animatorTranslation = ValueAnimator.ofFloat(0, 1);
+        animatorTranslation.addUpdateListener(valueAnimator -> {
             float progress = (float)valueAnimator.getAnimatedValue();
-            final float TRANSLATION = 300;
             float trX = TRANSLATION * progress;
             float trY;
-            float scale;
             float function1 = (-2 * progress * progress + 2.5f * progress);
             float function2 = (-2 * progress * progress + 2 * progress + 0.25f);
-            float function3 = (-7 * progress * progress + 7 * progress);
-            float direction = isShownInRight ? 1 : -1;
             if (progress < 0.5) {
                 trY = function1 * TRANSLATION;
-                scale = function1 + 1;
-                animatorFunction1BeforeFiftyPercent = function1;
             } else {
                 trY = function2 * TRANSLATION;
-                scale = function3;
             }
-            float rotation = 45 * animatorFunction1BeforeFiftyPercent * direction;
             float translationX = baseTranslationX - trX * direction;
             float translationY = baseTranslationY - trY;
             v.setTranslationX(translationX);
             v.setTranslationY(translationY);
-            v.setRotation(-rotation);
+        });
+        ValueAnimator animatorScale = ValueAnimator.ofFloat(0, 1);
+        animatorScale.addUpdateListener(valueAnimator -> {
+            float progress = (float)valueAnimator.getAnimatedValue();
+            float scale;
+            float function1 = (-2 * progress * progress + 2.5f * progress);
+            float function3 = (-7 * progress * progress + 7 * progress);
+            if (progress < 0.5) {
+                scale = function1 + 1;
+            } else {
+                scale = function3;
+            }
             v.setScaleX(scale);
             v.setScaleY(scale);
         });
-        animator.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {
-            }
+        ValueAnimator animatorRotation = ValueAnimator.ofFloat(0, 1);
+        animatorRotation.addUpdateListener(valueAnimator -> {
+            float progress = (float)valueAnimator.getAnimatedValue();
+            float function1 = (-2 * progress * progress + 2.5f * progress);
+            animatorFunction1BeforeFiftyPercent = function1;
+            float rotation = 45 * animatorFunction1BeforeFiftyPercent * direction;
+            v.setRotation(-rotation);
+        });
+
+        animatorSet.playTogether(animatorTranslation, animatorScale, animatorRotation);
+        animatorSet.setDuration(300);
+        float b = 0;
+//        animator.addUpdateListener(valueAnimator -> {
+//            float progress = (float)valueAnimator.getAnimatedValue();
+//            final float TRANSLATION = 300;
+//            float trX = TRANSLATION * progress;
+//            float trY;
+//            float scale;
+//            float function1 = (-2 * progress * progress + 2.5f * progress);
+//            float function2 = (-2 * progress * progress + 2 * progress + 0.25f);
+//            float function3 = (-7 * progress * progress + 7 * progress);
+//            float direction = isShownInRight ? 1 : -1;
+//            if (progress < 0.5) {
+//                trY = function1 * TRANSLATION;
+//                scale = function1 + 1;
+//                animatorFunction1BeforeFiftyPercent = function1;
+//            } else {
+//                trY = function2 * TRANSLATION;
+//                scale = function3;
+//            }
+//            float rotation = 45 * animatorFunction1BeforeFiftyPercent * direction;
+//            float translationX = baseTranslationX - trX * direction;
+//            float translationY = baseTranslationY - trY;
+//            v.setTranslationX(translationX);
+//            v.setTranslationY(translationY);
+//            v.setRotation(-rotation);
+//            v.setScaleX(scale);
+//            v.setScaleY(scale);
+//        });
+        animatorSet.addListener(new CustomAnimatorListener() {
             @Override
             public void onAnimationEnd(Animator animation) {
                 if (delegate != null) {
                     delegate.onEnd();
                 }
             }
-            @Override
-            public void onAnimationCancel(Animator animation) {
-            }
-            @Override
-            public void onAnimationRepeat(Animator animation) {
-            }
         });
         AndroidUtilities.runOnUIThread(() -> {
-            animator.start();
+            animatorSet.start();
             delegate.dimOriginal();
             delegate.shouldRemoveChosenReaction();
-        }, 50);
-
-//        AnimatorSet animatorSet = new AnimatorSet();
-//        animatorSet.setDuration(500);
-//        ValueAnimator animator = new ValueAnimator()
-//        animatorSet.addListener(new Animator.AnimatorListener() {
-//            @Override
-//            public void onAnimationStart(Animator animation) {
-//            }
-//            @Override
-//            public void onAnimationEnd(Animator animation) {
-//                if (delegate != null) {
-//                    delegate.shouldRemoveChosenReaction();
-//                }
-//            }
-//            @Override
-//            public void onAnimationCancel(Animator animation) {
-//            }
-//            @Override
-//            public void onAnimationRepeat(Animator animation) {
-//            }
-//        });
-//        animatorSet.setInterpolator(CubicBezierInterpolator.EASE_OUT);
-//        animatorSet.playTogether(ObjectAnimator.ofFloat());
+        }, 20);
     }
 
     public interface FullEmojiDisappearViewDelegate {

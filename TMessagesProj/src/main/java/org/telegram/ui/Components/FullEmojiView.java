@@ -20,6 +20,9 @@ import org.telegram.messenger.SvgHelper;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
+import org.telegram.ui.CustomAnimatorListener;
+
+import java.lang.ref.WeakReference;
 
 public class FullEmojiView extends FrameLayout {
 
@@ -31,12 +34,29 @@ public class FullEmojiView extends FrameLayout {
     LinearLayout v2;
     LinearLayout v3;
     FullEmojiViewDelegate delegate;
+    ImageReceiver.ImageReceiverDelegate delegateImg;
+    ImageReceiver.ImageReceiverDelegate delegateImg2;
 
     public FullEmojiView(@NonNull Context context) {
         super(context);
 
         createBgView();
         createImageView();
+    }
+
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        bgView = null;
+        imageView = null;
+        effectsImageView = null;
+        staticImageView = null;
+        v = null;
+        v2 = null;
+        v3 = null;
+        delegate = null;
+        delegateImg = null;
+        delegateImg2 = null;
     }
 
     public void setDelegate(FullEmojiViewDelegate delegate) {
@@ -72,34 +92,42 @@ public class FullEmojiView extends FrameLayout {
         effectsImageView = new BackupImageView(getContext());
         effectsImageView.setAspectFit(true);
         effectsImageView.setLayerNum(2);
+        effectsImageView.imageReceiver.setAllowDecodeSingleFrame(true);
         effectsImageView.imageReceiver.setAllowStartLottieAnimation(false);
         effectsImageView.imageReceiver.setAutoRepeat(0);
 
         staticImageView = new BackupImageView(getContext());
         staticImageView.setAspectFit(true);
         staticImageView.setLayerNum(2);
-
-        imageView.imageReceiver.setDelegate(new ImageReceiver.ImageReceiverDelegate() {
+        WeakReference weakReference1 = new WeakReference(this);
+        delegateImg = new ImageReceiver.ImageReceiverDelegate() {
             @Override
             public void didSetImage(ImageReceiver imageReceiver, boolean set, boolean thumb, boolean memCache) {
+
+            }
+
+            @Override
+            public void onAnimationReady(ImageReceiver imageReceiver) {
+                FullEmojiView fullEmojiView = (FullEmojiView) weakReference1.get();
+                if(fullEmojiView == null) { return; }
+                fullEmojiView.delegate.loadedAnimation();
+                fullEmojiView.imageView.setAlpha(1);
+                fullEmojiView.imageView.setVisibility(VISIBLE);
+                fullEmojiView.imageView.imageReceiver.setZeroFrame();
+                fullEmojiView.imageView.imageReceiver.startLottie();
+                fullEmojiView.animatorSet.start();
                 AndroidUtilities.runOnUIThread(new Runnable() {
                     @Override
                     public void run() {
-                        imageView.setAlpha(1);
-                        imageView.setVisibility(VISIBLE);
-                        imageView.imageReceiver.startLottie();
-                        effectsImageView.imageReceiver.startLottie();
-                        animatorSet.start();
-                        AndroidUtilities.runOnUIThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                emojiView.imageView.setAlpha(0);
-                            }
-                        });
+                        fullEmojiView.emojiView.imageView.setAlpha(0);
                     }
-                }, 30);
+                }, 10);
+                AndroidUtilities.runOnUIThread(() -> {
+                    fullEmojiView.delegate.finishedAppearing();
+                }, fullEmojiView.imageView.imageReceiver.getLottieAnimation().getDuration());
             }
-        });
+        };
+        imageView.imageReceiver.setDelegate(delegateImg);
     }
 
 
@@ -156,21 +184,23 @@ public class FullEmojiView extends FrameLayout {
                 ObjectAnimator.ofFloat(v, View.TRANSLATION_X, translationX),
                 ObjectAnimator.ofFloat(v, View.TRANSLATION_Y, translationY)
                 );
-        animatorSet.setDuration(2000);
+        animatorSet.setDuration(300);
 
-        imageView.imageReceiver.setZeroFrame();
-        effectsImageView.imageReceiver.setZeroFrame();
-        effectsImageView.setImage(ImageLocation.getForDocument(emojiView.reaction.effect_animation), null, "webp", null, this);
-        imageView.setImage(ImageLocation.getForDocument(emojiView.reaction.activate_animation), null, "webp", null, this);
-        ImageReceiver.ImageReceiverDelegate delegate = new ImageReceiver.ImageReceiverDelegate() {
+        delegateImg2 = new ImageReceiver.ImageReceiverDelegate() {
             @Override
             public void didSetImage(ImageReceiver imageReceiver, boolean set, boolean thumb, boolean memCache) {
+            }
+            @Override
+            public void onAnimationReady(ImageReceiver imageReceiver) {
+                effectsImageView.imageReceiver.setZeroFrame();
                 imageReceiver.startLottie();
             }
         };
-
-        imageView.imageReceiver.setDelegate(delegate);
-        effectsImageView.imageReceiver.setDelegate(delegate);
+        effectsImageView.imageReceiver.setDelegate(delegateImg2);
+        effectsImageView.setImage(ImageLocation.getForDocument(emojiView.reaction.effect_animation), null, "webp", null, this);
+        effectsImageView.imageReceiver.setZeroFrame();
+        imageView.setImage(ImageLocation.getForDocument(emojiView.reaction.activate_animation), null, "webp", null, this);
+        imageView.imageReceiver.setZeroFrame();
     }
 
     public void disappear(int[] endLocation) {
@@ -197,7 +227,7 @@ public class FullEmojiView extends FrameLayout {
         float translationY = endLocation[3] - startY - endLocation[1];
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.setInterpolator(CubicBezierInterpolator.EASE_OUT);
-        animatorSet.setDuration(2000);
+        animatorSet.setDuration(300);
 
         float endScale = (endLocation[0] * 1.5f) / startWidth;
         animatorSet.playTogether(
@@ -213,33 +243,31 @@ public class FullEmojiView extends FrameLayout {
         animatorSet.start();
         AnimatorSet animatorSet2 = new AnimatorSet();
         animatorSet2.setInterpolator(CubicBezierInterpolator.EASE_OUT);
-        animatorSet2.setDuration(500);
+        animatorSet2.setDuration(100);
         animatorSet2.setInterpolator(CubicBezierInterpolator.EASE_OUT);
         animatorSet2.playTogether(
                 ObjectAnimator.ofFloat(v, View.ALPHA, 0),
                 ObjectAnimator.ofFloat(v3, View.ALPHA, 1)
         );
-        animatorSet2.setStartDelay(1500);
+        animatorSet2.setStartDelay(200);
         animatorSet2.start();
-        animatorSet2.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(Animator animation) {}
+        WeakReference weakReference1 = new WeakReference(this);
+        animatorSet2.addListener(new CustomAnimatorListener() {
             @Override
             public void onAnimationEnd(Animator animation) {
-                if (delegate != null) {
-                    delegate.finishedAnimating();
+                FullEmojiView fullEmojiView = (FullEmojiView) weakReference1.get();
+                if(fullEmojiView == null) { return; }
+                if (fullEmojiView.delegate != null) {
+                    fullEmojiView.delegate.shouldDisappear();
                 }
-                v3.setAlpha(1);
+                fullEmojiView.v3.setAlpha(1);
             }
-            @Override
-            public void onAnimationCancel(Animator animation) {}
-            @Override
-            public void onAnimationRepeat(Animator animation) {}
         });
     }
 
-    @FunctionalInterface
     public interface FullEmojiViewDelegate {
-        void finishedAnimating();
+        void loadedAnimation();
+        void finishedAppearing();
+        void shouldDisappear();
     }
 }

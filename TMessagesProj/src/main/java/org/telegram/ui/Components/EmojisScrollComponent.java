@@ -43,6 +43,7 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.StickerEmojiCell;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
@@ -69,6 +70,18 @@ public class EmojisScrollComponent extends FrameLayout {
         setup();
     }
 
+    @Override
+    protected void onDetachedFromWindow() {
+        super.onDetachedFromWindow();
+        handler = null;
+        backgroundView = null;
+        scrollView = null;
+        linearLayoutScroll = null;
+        cells = null;
+        reactions = null;
+        callback = null;
+    }
+
     public void setupOnClickListener(OnClickListenerx callback) {
         this.callback = callback;
     }
@@ -93,17 +106,15 @@ public class EmojisScrollComponent extends FrameLayout {
         this.reactions = reactions;
         cells = new ArrayList<>();
         linearLayoutScroll.removeAllViews();
+        WeakReference weakReference = new WeakReference(this);
         for(int i = 0; i < reactions.size(); i++) {
             EmojisCell emojisCell = new EmojisCell(getContext(), i == 0 ? 0 : 2.5f);
             emojisCell.configure(reactions.get(i));
             emojisCell.setOnClickListener(v -> {
-                callback.selected((FrameLayout) v);
+                EmojisScrollComponent emojisScrollComponent = (EmojisScrollComponent)weakReference.get();
+                if(emojisScrollComponent == null) { return; }
+                emojisScrollComponent.callback.selected((FrameLayout) v);
             });
-//            StickerEmojiCell cell = new StickerEmojiCell(getContext(), false);
-//            cell.imageView.imageReceiver.setAutoRepeat(0);
-//            cell.imageView.imageReceiver.setAllowStartAnimation(false);
-//            cell.imageView.imageReceiver.setAllowStartLottieAnimation(false);
-//            cell.setSticker(reactions.get(i).select_animation, null, false);
             linearLayoutScroll.addView(emojisCell);
             cells.add(emojisCell);
         }
@@ -133,14 +144,15 @@ public class EmojisScrollComponent extends FrameLayout {
             @Override
             public void run() {
                 // Execute tasks on main thread
-
+                if (handler == null) { return; }
                 // Repeat this task again another 2 seconds
                 for(int i = 0; i < cells.size(); i++) {
                     if (played.contains(i) || random.nextInt(4) != 0) {
                         continue;
                     }
                     played.add(i);
-                    cells.get(i).play();
+                    cells.get(i).shouldPlay = true;
+                    cells.get(i).tryPlay();
                 }
                 if (played.size() != cells.size()) {
                     handler.postDelayed(this, 500);
@@ -154,7 +166,15 @@ public class EmojisScrollComponent extends FrameLayout {
     public class EmojisCell extends FrameLayout {
         public BackupImageView imageView;
         public TLRPC.TL_availableReaction reaction;
-        private BackupImageView receiverJustForClickedImage; // Clicked image receiver. STODO: Maybe receive in another way. I have an idea that we should start animation on when animation has been loaded. But for now I'll to stick to just loading it right there. It might cause performance troubles I guess
+        boolean shouldPlay = false;
+        boolean didSetImage = false;
+
+        @Override
+        protected void onDetachedFromWindow() {
+            super.onDetachedFromWindow();
+            imageView = null;
+            reaction = null;
+        }
 
         public EmojisCell(@NonNull Context context, float leftMargin) {
             super(context);
@@ -168,24 +188,39 @@ public class EmojisScrollComponent extends FrameLayout {
             imageView.setLayerNum(1);
             addView(imageView);
             imageView.imageReceiver.setAllowStartLottieAnimation(false);
-            receiverJustForClickedImage = new BackupImageView(context);
         }
 
         void configure(TLRPC.TL_availableReaction reaction) {
             this.reaction = reaction;
             SvgHelper.SvgDrawable svgThumb = DocumentObject.getSvgThumb(reaction.select_animation, Theme.key_windowBackgroundGray, 1.0f);
             imageView.setLayoutParams(LayoutHelper.createFrame(40, 40, Gravity.CENTER, 0, 0, 0, 0));
-            imageView.setImage(ImageLocation.getForDocument(reaction.select_animation), "66_66", null, svgThumb, this);
+            imageView.setAspectFit(true);
+            imageView.setLayerNum(2);
+            imageView.imageReceiver.setAllowDecodeSingleFrame(true);
+            imageView.imageReceiver.setAllowStartLottieAnimation(false);
+            imageView.imageReceiver.setAutoRepeat(0);
 //            receiverJustForClickedImage.setImage(ImageLocation.getForDocument(reaction.activate_animation), null, null, "webp", null);
+            imageView.imageReceiver.setDelegate(new ImageReceiver.ImageReceiverDelegate() {
+                @Override
+                public void didSetImage(ImageReceiver imageReceiver, boolean set, boolean thumb, boolean memCache) {
+                    didSetImage = true;
+                    tryPlay();
+                }
+            });
+            imageView.setImage(ImageLocation.getForDocument(reaction.select_animation), "66_66", null, svgThumb, this);
             imageView.imageReceiver.setZeroFrame();
-            receiverJustForClickedImage.setImage(ImageLocation.getForDocument(reaction.activate_animation), null, "webp", null, null);
-            ImageLoader.getInstance().loadImageForImageReceiver(receiverJustForClickedImage.imageReceiver);
         }
 
-        void play() {
+        void tryPlay() {
+            if (!shouldPlay || !didSetImage) { return; }
+            play();
+        }
+
+        private void play() {
             if (imageView == null || imageView.imageReceiver == null || imageView.imageReceiver.getLottieAnimation() == null) {
                 return;
             }
+            imageView.imageReceiver.setZeroFrame();
             imageView.imageReceiver.startLottie();
         }
     }

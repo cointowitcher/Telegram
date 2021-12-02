@@ -242,6 +242,7 @@ import org.telegram.ui.Delegates.ChatActivityMemberRequestsDelegate;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
+import java.lang.ref.WeakReference;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20457,19 +20458,38 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT);
         fullEmojiView.setLayoutParams(layoutParams);
         fullEmojiPopupWindow.showAtLocation(getParentActivity().getWindow().getDecorView(), Gravity.LEFT | Gravity.TOP, 0, 0);
-        fullEmojiView.setDelegate(() -> {
-            cell.chosenReactionAlpha = 1;
-            cell.invalidate();
-            AndroidUtilities.runOnUIThread(() -> {
-                fullEmojiPopupWindow.dismiss(false);
-            }, 50);
+        WeakReference weakReference1 = new WeakReference(fullEmojiPopupWindow);
+        WeakReference weakReference2 = new WeakReference(this);
+        fullEmojiView.setDelegate(new FullEmojiView.FullEmojiViewDelegate() {
+            @Override
+            public void loadedAnimation() {
+                if (scrimPopupWindow != null) {
+                    scrimPopupWindow.dismiss();
+                    scrimPopupWindow = null;
+                    menuDeleteItem = null;
+                    scrimPopupWindowItems = null;
+                }
+            }
+
+            @Override
+            public void finishedAppearing() {
+                int[] coords = cell.getLocationInformationOfChosenReaction();
+                fullEmojiView.disappear(coords);
+            }
+            @Override
+            public void shouldDisappear() {
+                final ActionBarPopupWindow fullEmojiPopupWindow = (ActionBarPopupWindow)weakReference1.get();
+                final ChatActivity chatActivity = (ChatActivity)weakReference2.get();
+                if (fullEmojiPopupWindow == null || chatActivity == null) { return; }
+                cell.chosenReactionAlpha = 1;
+                cell.invalidate();
+                AndroidUtilities.runOnUIThread(() -> {
+                    fullEmojiPopupWindow.dismiss(false);
+                    chatActivity.fullEmojiPopupWindow = null;
+                    chatActivity.fullEmojiView = null;
+                }, 50);
+            }
         });
-        if (scrimPopupWindow != null) {
-            scrimPopupWindow.dismiss();
-            scrimPopupWindow = null;
-            menuDeleteItem = null;
-            scrimPopupWindowItems = null;
-        }
         String reaction = ((EmojisScrollComponent.EmojisCell) emojiView).reaction.reaction;
         if (cell.getMessageObject().isAnyPersonalChosenReaction()) {
             cell.animateChosenReactionDim();
@@ -20483,13 +20503,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             // cool
         });
         MessageObject.addChosenReaction(messageObject.messageOwner, reaction);
-        AndroidUtilities.runOnUIThread(() -> {
-            chatAdapter.updateRowWithMessageObject(messageObject, false);
-            AndroidUtilities.runOnUIThread(() -> {
-                int[] coords = cell.getLocationInformationOfChosenReaction();
-                fullEmojiView.disappear(coords);
-            }, 1000);
-        });
+        chatAdapter.updateRowWithMessageObject(messageObject, false);
     }
 
     FullEmojiDisappearView fullEmojiDisappearView;
@@ -20497,6 +20511,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     private void showFullEmojiDisappearView(ChatMessageCell cell) {
         MessageObject messageObject = cell.getMessageObject();
+
         String reaction = messageObject.personalChosenReaction;
         TLRPC.Document doc = null;
         ArrayList<TLRPC.TL_availableReaction> availableReactions = getReactionsManager().availableReactions;
@@ -20526,6 +20541,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             @Override
             public void onEnd() {
                 fullEmojiDisappearPopupWindow.dismiss(false);
+                fullEmojiDisappearView = null;
+                cell.chosenReactionAlpha = 1;
             }
 
             @Override
@@ -20543,6 +20560,12 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             menuDeleteItem = null;
             scrimPopupWindowItems = null;
         }
+        getReactionsManager().sendReaction(messageObject, null, ChatActivity.this, (successful) -> {
+            if (!successful) {
+//                MessageObject.removePersonalChosenReaction(messageObject.messageOwner); // maybe not sure, edge cases to be considered
+            }
+            // cool
+        });
     }
 
     private void startEditingMessageObject(MessageObject messageObject) {
