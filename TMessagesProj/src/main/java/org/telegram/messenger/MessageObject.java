@@ -237,6 +237,22 @@ public class MessageObject {
         }
     }
 
+//    public static void addPersonalChosenReaction(TLRPC.Message message) {
+//        removePersonalChosenReaction();
+//    }
+
+    public static String getPersonalChosenReaction(TLRPC.Message message) {
+        if (message.reactions == null) {
+            return null;
+        }
+        for (int i = 0; i < message.reactions.results.size(); i++) {
+            if (message.reactions.results.get(i).chosen) {
+                return message.reactions.results.get(i).reaction;
+            }
+        }
+        return null;
+    }
+
     public static void removePersonalChosenReaction(TLRPC.Message message) {
         if (message.reactions == null || message.reactions.results.size() == 0) {
             return;
@@ -2179,6 +2195,48 @@ public class MessageObject {
             } else {
                 messageText = replaceWithLink(LocaleController.getString("ActionPinnedNoText", R.string.ActionPinnedNoText), "un1", fromUser != null ? fromUser : chat);
             }
+        }
+    }
+
+    public static void addChosenReaction(TLRPC.Message message, String reaction) {
+        if (message == null || reaction == null) {
+            return;
+        }
+        boolean didFound = false;
+        if (message.reactions != null && message.reactions.results != null) {
+            for (int a = 0, N = message.reactions.results.size(); a < N; a++) {
+                TLRPC.TL_reactionCount reactionCount = message.reactions.results.get(a);
+                if (reactionCount.reaction.equals(reaction)) {
+                    didFound = true;
+                    if (!reactionCount.chosen) {
+                        reactionCount.count += 1;
+                        reactionCount.chosen = true;
+                    }
+                    break;
+                }
+            }
+        }
+        if (!didFound) {
+            TLRPC.TL_reactionCount reactionCount = new TLRPC.TL_reactionCount();
+            reactionCount.chosen = true;
+            reactionCount.count = 1;
+            reactionCount.reaction = reaction;
+            reactionCount.disableFree = false;
+            reactionCount.networkType = 0;
+            reactionCount.flags = 1;
+
+            TLRPC.TL_messageUserReaction userReaction = new TLRPC.TL_messageUserReaction();
+            userReaction.reaction = reaction;
+            userReaction.user_id = 0;
+            if (message.reactions == null) {
+                message.reactions = new TLRPC.TL_messageReactions();
+                message.reactions.flags = 2;
+                message.reactions.min = false;
+                message.reactions.results = new ArrayList<>();
+                message.reactions.recent_reactons = new ArrayList<>();
+            }
+            message.reactions.results.add(reactionCount);
+            message.reactions.recent_reactons.add(userReaction);
         }
     }
 

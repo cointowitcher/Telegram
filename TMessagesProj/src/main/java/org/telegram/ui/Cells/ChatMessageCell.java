@@ -63,6 +63,7 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
+import android.view.animation.Animation;
 import android.view.animation.Interpolator;
 import android.widget.Toast;
 
@@ -12015,13 +12016,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             } else {
                 float timeX;
                 float timeWidth;
-                if (transitionParams.shouldAnimateTimeX) {
-                    timeX = this.timeX * transitionParams.animateChangeProgress + transitionParams.animateFromTimeX * (1f - transitionParams.animateChangeProgress);
-                    timeWidth = this.timeWidth * transitionParams.animateChangeProgress + transitionParams.animateTimeWidth * (1f - transitionParams.animateChangeProgress);
-                } else {
-                    timeX = this.timeX + transitionParams.deltaRight;
-                    timeWidth = this.timeWidth;
-                }
+                timeX = this.timeX + transitionParams.deltaRight;
+                timeWidth = this.timeWidth;
                 drawTimeInternal(canvas, curentAplha, fromParent, timeX, timeLayout, timeWidth, drawSelectionBackground);
             }
         }
@@ -12052,11 +12048,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
             }
         }
-//        if (!currentMessageObject.isAnyChosenReaction) {
-//            reactionsChosen.setAlpha(0);
-//        } else {
-//            reactionsChosen.setAlpha(chosenReactionAlpha);
-//        }
+        reactionsChosen.setAlpha(chosenReactionAlpha);
 //        if (!currentMessageObject.isAnyNotChosenReaction) {
 //            reactionsNotChosen.setAlpha(0);
 //        }
@@ -12075,9 +12067,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         boolean bigRadius = false;
         float layoutHeight = this.layoutHeight + transitionParams.deltaBottom;
         float timeTitleTimeX = timeX;
-        if (transitionParams.shouldAnimateTimeX) {
-            timeTitleTimeX = transitionParams.animateFromTimeX * (1f - transitionParams.animateChangeProgress) + this.timeX * transitionParams.animateChangeProgress;
-        }
         if (currentMessagesGroup != null && currentMessagesGroup.transitionParams.backgroundChangeBounds) {
             layoutHeight -= getTranslationY();
             timeX += currentMessagesGroup.transitionParams.offsetRight;
@@ -12475,6 +12464,28 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
             }
         }
+    }
+
+    public void resetChosenReactionDimAnimator() {
+        if (chosenReactionDimAnimator == null) { return; }
+        chosenReactionDimAnimator.cancel();
+        chosenReactionDimAnimator.removeAllListeners();
+        chosenReactionDimAnimator = null;
+    }
+    private ValueAnimator chosenReactionDimAnimator;
+    public void animateChosenReactionDim() {
+        if (!getMessageObject().isAnyPersonalReaction()) { return; }
+        resetChosenReactionDimAnimator();
+        chosenReactionDimAnimator = ValueAnimator.ofFloat(1, 0);
+        chosenReactionDimAnimator.setDuration(1000);
+        chosenReactionDimAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                chosenReactionAlpha = (float)animation.getAnimatedValue();
+                invalidate();
+            }
+        });
+        chosenReactionDimAnimator.start();
     }
 
     private void drawViewsAndRepliesLayout(Canvas canvas, float layoutHeight, float alpha, float timeYOffset, float timeX, float progress, boolean drawSelectionBackground) {

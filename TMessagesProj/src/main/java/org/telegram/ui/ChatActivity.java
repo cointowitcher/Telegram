@@ -20458,15 +20458,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         fullEmojiView.setLayoutParams(layoutParams);
         fullEmojiPopupWindow.showAtLocation(getParentActivity().getWindow().getDecorView(), Gravity.LEFT | Gravity.TOP, 0, 0);
         fullEmojiView.setDelegate(() -> {
-            if (!messageObject.reactionForPersonalChosen.equals(newReaction)) {
-                messageObject.forceUpdate = true;
-                messageObject.addReactionsForPersonalChat(newReaction, true);
-                cell.chosenReactionAlpha = 1;
-                chatAdapter.updateRowWithMessageObject(messageObject, false);
-            } else {
-                cell.chosenReactionAlpha = 1;
-                cell.invalidate();
-            }
+            cell.chosenReactionAlpha = 1;
+            cell.invalidate();
             AndroidUtilities.runOnUIThread(() -> {
                 fullEmojiPopupWindow.dismiss(false);
             }, 50);
@@ -20478,36 +20471,25 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             scrimPopupWindowItems = null;
         }
         String reaction = ((EmojisScrollComponent.EmojisCell) emojiView).reaction.reaction;
-        if (messageObject.reactionForPersonalChosen != null) {
-            ValueAnimator animator = ValueAnimator.ofFloat(1, 0);
-            animator.setDuration(1000);
-            animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    cell.chosenReactionAlpha = (float)animation.getAnimatedValue();
-                    cell.invalidate();
-                }
-            });
-            animator.start();
+        if (cell.getMessageObject().isAnyPersonalChosenReaction()) {
+            cell.animateChosenReactionDim();
+        } else {
+            cell.chosenReactionAlpha = 0;
         }
+        getReactionsManager().sendReaction(messageObject, reaction, ChatActivity.this, (successful) -> {
+            if (!successful) {
+                MessageObject.removePersonalChosenReaction(messageObject.messageOwner); // maybe not sure, edge cases to be considered
+            }
+            // cool
+        });
+        MessageObject.addChosenReaction(messageObject.messageOwner, reaction);
         AndroidUtilities.runOnUIThread(() -> {
-            getReactionsManager().sendReaction(messageObject, reaction, ChatActivity.this, (successful) -> {
-                if (!successful) { return; }
-                AndroidUtilities.runOnUIThread(() -> {
-                    messageObject.forceUpdate = true;
-                    newReaction = reaction;
-                    if (messageObject.reactionForPersonalChosen == null) {
-                        messageObject.addReactionsForPersonalChat(reaction, true);
-                        chatAdapter.updateRowWithMessageObject(messageObject, false);
-                    }
-                    AndroidUtilities.runOnUIThread(() -> {
-                        int[] coords = cell.getLocationInformationOfChosenReaction();
-                        fullEmojiView.disappear(coords);
-                    }, 1000);
-                });
-
-            });
+            chatAdapter.updateRowWithMessageObject(messageObject, false);
+            AndroidUtilities.runOnUIThread(() -> {
+                int[] coords = cell.getLocationInformationOfChosenReaction();
+                fullEmojiView.disappear(coords);
             }, 1000);
+        });
     }
 
     FullEmojiDisappearView fullEmojiDisappearView;
