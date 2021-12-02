@@ -192,12 +192,74 @@ public class MessageObject {
     public String reactionForPersonalChosen;
     public String reactionForPersonalNotChosen;
 
-    public void addReactionsForPersonalChat(String reaction, boolean chosen) {
-        if (chosen) {
-            reactionForPersonalChosen = reaction;
-        } else {
-            reactionForPersonalNotChosen = reaction;
+    public boolean isAnyPersonalChosenReaction() {
+        return personalChosenReaction != null;
+    }
+    public boolean isAnyPersonalNotChosenReaction() {
+        return personalNotChosenReaction != null;
+    }
+    public boolean isAnyPersonalReaction() {
+        return isAnyPersonalChosenReaction() || isAnyPersonalNotChosenReaction();
+    }
+    public String personalChosenReaction = null;
+    public String personalNotChosenReaction = null;
+
+    public boolean isUserOrEncrypted() {
+        return DialogObject.isUserDialog(messageOwner.dialog_id) || DialogObject.isEncryptedDialog(messageOwner.dialog_id);
+    }
+
+    public void updateChosenReactions() {
+        personalChosenReaction = null;
+        personalNotChosenReaction = null;
+        if (!isUserOrEncrypted()) { return; }
+        ReactionsManager reactionsManager = AccountInstance.getInstance(currentAccount).getReactionsManager();
+        if (messageOwner.reactions != null && messageOwner.reactions.results.size() != 0) {
+            for (int i = 0; i < messageOwner.reactions.results.size(); i++) {
+                TLRPC.TL_reactionCount reactionCount = messageOwner.reactions.results.get(i);
+                TLRPC.TL_availableReaction availableReaction = reactionsManager.getAvailableReactionFor(reactionCount.reaction);
+                if (availableReaction == null) {
+                    continue;
+                }
+                if (reactionCount.count == 2) {
+                    personalChosenReaction = reactionCount.reaction;
+                    personalNotChosenReaction = reactionCount.reaction;
+                    return;
+                }
+                if (reactionCount.chosen) {
+                    personalChosenReaction = reactionCount.reaction;
+                } else {
+                    personalNotChosenReaction = reactionCount.reaction;
+                }
+                if (personalChosenReaction != null && personalNotChosenReaction != null) {
+                    return;
+                }
+            }
         }
+    }
+
+    public static void removePersonalChosenReaction(TLRPC.Message message) {
+        if (message.reactions == null || message.reactions.results.size() == 0) {
+            return;
+        }
+        for (int i = 0; i < message.reactions.results.size(); i++) {
+            if (message.reactions.results.get(i).chosen) {
+                if (message.reactions.results.get(i).count == 2) {
+                    message.reactions.results.get(i).count = 1;
+                    message.reactions.results.get(i).chosen = false;
+                } else {
+                    message.reactions.results.remove(i);
+                }
+                break;
+            }
+        }
+    }
+
+    public void addReactionsForPersonalChat(String reaction, boolean chosen) {
+//        if (chosen) {
+//            reactionForPersonalChosen = reaction;
+//        } else {
+//            reactionForPersonalNotChosen = reaction;
+//        }
     }
 
     static final String[] excludeWords = new String[] {
@@ -888,11 +950,7 @@ public class MessageObject {
         localChannel = isChannel;
         localSupergroup = supergroup;
         localEdit = edit;
-        if (message.reactions != null && message.reactions.results.size() != 0) {
-            for(int i = 0; i < message.reactions.results.size(); i++) {
-                addReactionsForPersonalChat(message.reactions.results.get(i).reaction, message.reactions.results.get(i).chosen);
-            }
-        }
+        updateChosenReactions();
     }
 
     public MessageObject(int accountNum, TLRPC.Message message, AbstractMap<Long, TLRPC.User> users, boolean generateLayout, boolean checkMediaExists) {
@@ -931,11 +989,6 @@ public class MessageObject {
         replyMessageObject = replyToMessage;
         eventId = eid;
         wasUnread = !messageOwner.out && messageOwner.unread;
-        if (message.reactions != null && message.reactions.results.size() != 0) {
-            for(int i = 0; i < message.reactions.results.size(); i++) {
-                addReactionsForPersonalChat(message.reactions.results.get(i).reaction, message.reactions.results.get(i).chosen);
-            }
-        }
 
 
         if (message.replyMessage != null) {
@@ -1017,6 +1070,7 @@ public class MessageObject {
         if (checkMediaExists) {
             checkMediaExistance();
         }
+        updateChosenReactions();
     }
 
     private void createPathThumb() {
@@ -1945,6 +1999,7 @@ public class MessageObject {
         layoutCreated = true;
         generateThumbs(false);
         checkMediaExistance();
+        updateChosenReactions();
     }
 
     private String getUserName(TLObject object, ArrayList<TLRPC.MessageEntity> entities, int offset) {
@@ -2126,7 +2181,7 @@ public class MessageObject {
             }
         }
     }
-    
+
     public static void updateReactions(TLRPC.Message message, TLRPC.TL_messageReactions reactions) {
         if (message == null || reactions == null) {
             return;

@@ -81,10 +81,26 @@ public class ReactionsManager {
         });
     }
 
-
     // MARK: - Helper
+    public TLRPC.TL_availableReaction getAvailableReactionFor(String reaction) {
+        for(int i = 0; i < availableReactions.size(); i++) {
+            if (availableReactions.get(i).reaction.equals(reaction)) {
+                return availableReactions.get(i);
+            }
+        }
+        return null;
+    }
+
+    public void locallyUpdateMessageReactions(long dialogId, int msgId, TLRPC.TL_messageReactions reactions) {
+        getMessagesStorage().updateMessageReactions(dialogId, msgId, reactions);
+    }
+    public void locallyUpdateMessageReactions(TLRPC.Message message) {
+        locallyUpdateMessageReactions(MessageObject.getPeerId(message.peer_id), message.id, message.reactions);
+    }
+
     private ConnectionsManager getConnectionsManager() { return accountInstance.getConnectionsManager(); }
     private MessagesController getMessagesController() { return accountInstance.getMessagesController(); }
+    private MessagesStorage getMessagesStorage() { return accountInstance.getMessagesStorage(); }
     private SendMessagesHelper getSendMessagesHelper() { return accountInstance.getSendMessagesHelper(); }
 
     @FunctionalInterface

@@ -12555,7 +12555,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                 }
                 if (message.reactions != null) {
-                    getMessagesStorage().updateMessageReactions(MessageObject.getPeerId(message.peer_id), message.id, message.reactions);
+                    getAccountInstance().getReactionsManager().locallyUpdateMessageReactions(message);
                 }
                 if (!message.out && message.from_id instanceof TLRPC.TL_peerUser && message.from_id.user_id == clientUserId) {
                     message.out = true;
@@ -12704,7 +12704,7 @@ public class MessagesController extends BaseController implements NotificationCe
             } else if (baseUpdate instanceof TLRPC.TL_updateMessageReactions) {
                 TLRPC.TL_updateMessageReactions update = (TLRPC.TL_updateMessageReactions) baseUpdate;
                 long dialogId = MessageObject.getPeerId(update.peer);
-                getMessagesStorage().updateMessageReactions(dialogId, update.msg_id, update.reactions);
+                getAccountInstance().getReactionsManager().locallyUpdateMessageReactions(dialogId, update.msg_id, update.reactions);
                 if (updatesOnMainThread == null) {
                     updatesOnMainThread = new ArrayList<>();
                 }

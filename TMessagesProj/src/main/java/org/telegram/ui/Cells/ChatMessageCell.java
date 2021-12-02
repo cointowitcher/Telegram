@@ -53,7 +53,6 @@ import android.text.style.URLSpan;
 import android.util.Property;
 import android.util.SparseArray;
 import android.util.StateSet;
-import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.SoundEffectConstants;
@@ -68,8 +67,6 @@ import android.view.animation.Interpolator;
 import android.widget.Toast;
 
 import androidx.core.graphics.ColorUtils;
-
-import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
@@ -91,6 +88,7 @@ import org.telegram.messenger.MediaDataController;
 import org.telegram.messenger.MessageObject;
 import org.telegram.messenger.MessagesController;
 import org.telegram.messenger.R;
+import org.telegram.messenger.ReactionsManager;
 import org.telegram.messenger.SendMessagesHelper;
 import org.telegram.messenger.SharedConfig;
 import org.telegram.messenger.UserConfig;
@@ -110,13 +108,11 @@ import org.telegram.ui.Components.AnimationProperties;
 import org.telegram.ui.Components.AudioVisualizerDrawable;
 import org.telegram.ui.Components.AvatarDrawable;
 import org.telegram.ui.Components.BackgroundGradientDrawable;
-import org.telegram.ui.Components.BackupImageView;
 import org.telegram.ui.Components.CheckBoxBase;
 import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.EmptyStubSpan;
 import org.telegram.ui.Components.FloatSeekBarAccessibilityDelegate;
 import org.telegram.ui.Components.InfiniteProgress;
-import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.LinkPath;
 import org.telegram.ui.Components.MediaActionDrawable;
 import org.telegram.ui.Components.MessageBackgroundDrawable;
@@ -149,7 +145,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Random;
 
 public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate, ImageReceiver.ImageReceiverDelegate, DownloadController.FileDownloadProgressListener, TextSelectionHelper.SelectableView {
 
@@ -696,24 +691,26 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private ImageReceiver reactionsNotChosen;
     private boolean reactionsChosenPressed = false;
 
+    private String lastPersonalChosenReaction;
+    private String lastPersonalNotChosenReaction;
     private float reactionsChosenX;
     private float reactionsChosenY;
 
     private int getReactionsAdditionalWidth(MessageObject messageObject) {
         int[] loc = new int[2];
         getLocationInWindow(loc);
-        if (messageObject.reactionForPersonalChosen == null && messageObject.reactionForPersonalNotChosen == null) {
+        if (!currentMessageObject.isAnyPersonalReaction()) {
             return 0;
         }
         float reactionsAdditionalWidth = 0;
-        if (messageObject.reactionForPersonalChosen != null) {
+        if (currentMessageObject.isAnyPersonalChosenReaction()) {
             reactionsAdditionalWidth += reactionSmallImageSize;
         }
-        if (messageObject.reactionForPersonalNotChosen != null) {
+        if (currentMessageObject.isAnyPersonalNotChosenReaction()) {
             reactionsAdditionalWidth += reactionSmallImageSize;
         }
 
-        if (messageObject.reactionForPersonalChosen != null && messageObject.reactionForPersonalNotChosen != null) {
+        if (currentMessageObject.isAnyPersonalReaction()) {
             reactionsAdditionalWidth += reactionSmallSpacing * 3;
         } else {
             reactionsAdditionalWidth += reactionSmallSpacing * 2;
@@ -735,14 +732,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     private int getReactionsAdditionalWidth() {
         return getReactionsAdditionalWidth(currentMessageObject);
-    }
-
-    private boolean isChosenReactionAvailable() {
-        return currentMessageObject.reactionForPersonalChosen != null;
-    }
-
-    private boolean isNotChosenReactionAvailable() {
-        return currentMessageObject.reactionForPersonalNotChosen != null;
     }
 
     public StaticLayout replyNameLayout;
@@ -2120,7 +2109,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     private boolean checkChosenReactionMotionEvent(MotionEvent event) {
-        if (getMessageObject().reactionForPersonalChosen == null) {
+        if (!currentMessageObject.isAnyPersonalChosenReaction()) {
             return false;
         }
 
@@ -3160,6 +3149,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     @SuppressLint("WrongConstant")
     private void setMessageContent(MessageObject messageObject, MessageObject.GroupedMessages groupedMessages, boolean bottomNear, boolean topNear) {
+        messageObject.updateChosenReactions();
         if (messageObject.checkLayout() || currentPosition != null && lastHeight != AndroidUtilities.displaySize.y) {
             currentMessageObject = null;
         }
@@ -3169,7 +3159,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         isRoundVideo = messageObject != null && messageObject.isRoundVideo();
         TLRPC.Message newReply = messageObject.hasValidReplyMessageObject() ? messageObject.replyMessageObject.messageOwner : null;
         boolean messageIdChanged = currentMessageObject == null || currentMessageObject.getId() != messageObject.getId();
-        boolean messageChanged = currentMessageObject != messageObject || messageObject.forceUpdate || (isRoundVideo && isPlayingRound != (MediaController.getInstance().isPlayingMessage(currentMessageObject) && delegate != null && !delegate.keyboardIsOpened()));
+        boolean messageChanged = currentMessageObject != messageObject || messageObject.forceUpdate
+                || (isRoundVideo && isPlayingRound != (MediaController.getInstance().isPlayingMessage(currentMessageObject) && delegate != null && !delegate.keyboardIsOpened())) ||
+                lastPersonalChosenReaction != messageObject.personalChosenReaction || lastPersonalNotChosenReaction != messageObject.personalNotChosenReaction;
         boolean dataChanged = currentMessageObject != null && currentMessageObject.getId() == messageObject.getId() && lastSendState == MessageObject.MESSAGE_SEND_STATE_EDITING && messageObject.isSent() ||
                 currentMessageObject == messageObject && (isUserDataChanged() || photoNotSet) ||
                 lastPostAuthor != messageObject.messageOwner.post_author ||
@@ -3177,22 +3169,30 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 newReply != lastReplyMessage;
         boolean groupChanged = groupedMessages != currentMessagesGroup;
         boolean pollChanged = false;
-        if (messageObject.reactionForPersonalChosen != null || messageObject.reactionForPersonalNotChosen != null) {
-            ArrayList<TLRPC.TL_availableReaction> availableReactions = AccountInstance.getInstance(currentAccount).getReactionsManager().availableReactions;
-            for(int i = 0; i < availableReactions.size(); i++) {
-                TLRPC.TL_availableReaction reaction = availableReactions.get(i);
-                if (reaction.reaction.equals(messageObject.reactionForPersonalChosen)) {
-                    reactionsChosen.setImage(ImageLocation.getForDocument(reaction.static_icon), null, null, "webp", null, 0);
+        ReactionsManager reactionsManager = AccountInstance.getInstance(currentAccount).getReactionsManager();
+        if (messageObject.isAnyPersonalReaction()) {
+            for (int i = 0; i < messageObject.messageOwner.reactions.results.size(); i++) {
+                TLRPC.TL_reactionCount reactionCount = messageObject.messageOwner.reactions.results.get(i);
+                TLRPC.TL_availableReaction availableReaction = reactionsManager.getAvailableReactionFor(reactionCount.reaction);
+                if (availableReaction == null) {
+                    continue;
                 }
-                if (reaction.reaction.equals(messageObject.reactionForPersonalNotChosen)) {
-                    reactionsNotChosen.setImage(ImageLocation.getForDocument(reaction.static_icon), null, null, "webp", null, 0);
+                if (reactionCount.count == 2) {
+                    reactionsChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
+                    reactionsNotChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
+                    break;
+                }
+                if (reactionCount.chosen) {
+                    reactionsChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
+                } else {
+                    reactionsNotChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
                 }
             }
         }
-        if (messageObject.reactionForPersonalChosen == null) {
+        if (!messageObject.isAnyPersonalChosenReaction()) {
             reactionsChosen.setImageBitmap((Drawable) null);
         }
-        if (messageObject.reactionForPersonalNotChosen == null) {
+        if (!messageObject.isAnyPersonalNotChosenReaction()) {
             reactionsNotChosen.setImageBitmap((Drawable) null);
         }
         if (drawCommentButton || drawSideButton == 3 && !((hasDiscussion && messageObject.isLinkedToChat(linkedChatId) || isRepliesChat) && (currentPosition == null || currentPosition.siblingHeights == null && (currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 || currentPosition.siblingHeights != null && (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) == 0))) {
@@ -3252,6 +3252,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             lastPostAuthor = messageObject.messageOwner.post_author;
             isHighlightedAnimated = false;
             widthBeforeNewTimeLine = -1;
+            lastPersonalChosenReaction = messageObject.personalChosenReaction;
+            lastPersonalNotChosenReaction = messageObject.personalNotChosenReaction;
             if (currentMessagesGroup != null && (currentMessagesGroup.posArray.size() > 1)) {
                 currentPosition = currentMessagesGroup.positions.get(currentMessageObject);
                 if (currentPosition == null) {
@@ -12050,14 +12052,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
             }
         }
-        if (getMessageObject().reactionForPersonalChosen == null) {
-            reactionsChosen.setAlpha(0);
-        } else {
-            reactionsChosen.setAlpha(chosenReactionAlpha);
-        }
-        if (getMessageObject().reactionForPersonalNotChosen == null) {
-            reactionsNotChosen.setAlpha(0);
-        }
+//        if (!currentMessageObject.isAnyChosenReaction) {
+//            reactionsChosen.setAlpha(0);
+//        } else {
+//            reactionsChosen.setAlpha(chosenReactionAlpha);
+//        }
+//        if (!currentMessageObject.isAnyNotChosenReaction) {
+//            reactionsNotChosen.setAlpha(0);
+//        }
         if (getTransitionParams().animateDrawingTimeAlpha) {
             alpha *= getTransitionParams().animateChangeProgress;
         }
@@ -12096,7 +12098,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         int reactionsWidthHeight = AndroidUtilities.dp(reactionSmallImageSize);
         int reactionsChosenX = AndroidUtilities.dp(reactionSmallSpacing);
         int reactionsNotChosenX = reactionsChosenX;
-        if (isChosenReactionAvailable()) {
+        if (currentMessageObject.isAnyPersonalChosenReaction()) {
             reactionsNotChosenX = AndroidUtilities.dp(reactionSmallSpacing) * 2 + reactionsWidthHeight;
         }
 

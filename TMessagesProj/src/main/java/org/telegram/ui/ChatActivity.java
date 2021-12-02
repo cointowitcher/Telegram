@@ -60,7 +60,6 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ForegroundColorSpan;
 import android.text.style.URLSpan;
-import android.util.Pair;
 import android.util.Property;
 import android.util.SparseArray;
 import android.util.SparseIntArray;
@@ -99,7 +98,6 @@ import androidx.recyclerview.widget.LinearSmoothScrollerCustom;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
-import com.google.android.exoplayer2.util.Log;
 
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
@@ -137,7 +135,6 @@ import org.telegram.messenger.browser.Browser;
 import org.telegram.messenger.support.LongSparseIntArray;
 import org.telegram.messenger.voip.VoIPService;
 import org.telegram.tgnet.ConnectionsManager;
-import org.telegram.tgnet.SerializedData;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -15018,8 +15015,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 MessageObject messageObject = messagesDict[did == dialog_id ? 0 : 1].get(msgId);
                 if (messageObject != null) {
                     MessageObject.updateReactions(messageObject.messageOwner, (TLRPC.TL_messageReactions) args[2]);
-                    messageObject.measureInlineBotButtons();
-                    chatAdapter.updateRowWithMessageObject(messageObject, true);
+                    messageObject.updateChosenReactions();
+                    chatAdapter.updateRowWithMessageObject(messageObject, false);
                 }
             }
         } else if (id == NotificationCenter.didVerifyMessagesStickers) {
@@ -20517,7 +20514,8 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     ActionBarPopupWindow fullEmojiDisappearPopupWindow;
 
     private void showFullEmojiDisappearView(ChatMessageCell cell) {
-        String reaction = cell.getMessageObject().reactionForPersonalChosen;
+        MessageObject messageObject = cell.getMessageObject();
+        String reaction = messageObject.personalChosenReaction;
         TLRPC.Document doc = null;
         ArrayList<TLRPC.TL_availableReaction> availableReactions = getReactionsManager().availableReactions;
         for(int i = 0; i < availableReactions.size(); i++) {
@@ -20538,10 +20536,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         fullEmojiDisappearView.setDelegate(new FullEmojiDisappearView.FullEmojiDisappearViewDelegate() {
             @Override
             public void shouldRemoveChosenReaction() {
-                cell.getMessageObject().reactionForPersonalChosen = null;
-                cell.getMessageObject().forceUpdate = true;
-                cell.chosenReactionAlpha = 1;
-                chatAdapter.updateRowWithMessageObject(cell.getMessageObject(), false);
+                MessageObject.removePersonalChosenReaction(messageObject.messageOwner);
+                getReactionsManager().locallyUpdateMessageReactions(messageObject.messageOwner);
+                chatAdapter.updateRowWithMessageObject(messageObject, false);
             }
 
             @Override
