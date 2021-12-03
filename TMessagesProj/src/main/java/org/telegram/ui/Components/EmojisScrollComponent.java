@@ -59,6 +59,7 @@ public class EmojisScrollComponent extends FrameLayout {
     private int type = 0;
     private Handler handler;
     private OnClickListenerx callback;
+    private ValueAnimator widthAnimator;
 
     public EmojisScrollComponent(Context context, Theme.ResourcesProvider resourcesProvider) {
         super(context);
@@ -73,6 +74,10 @@ public class EmojisScrollComponent extends FrameLayout {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
+        if (widthAnimator != null) {
+            widthAnimator.cancel();
+        }
+        widthAnimator = null;
         handler = null;
         backgroundView = null;
         scrollView = null;
@@ -124,7 +129,7 @@ public class EmojisScrollComponent extends FrameLayout {
     public void animateAppearing(long duration) {
         backgroundView.setLayoutParams(LayoutHelper.createFrame((int)(getLayoutParams().width * 0.1f), getLayoutParams().height, Gravity.RIGHT));
         scrollView.setLayoutParams(LayoutHelper.createFrame((int)(getLayoutParams().width * 0.1f), getLayoutParams().height, Gravity.RIGHT));
-        ValueAnimator widthAnimator = ValueAnimator.ofInt((int)(getLayoutParams().width * 0.1f), getLayoutParams().width).setDuration(duration);
+        widthAnimator = ValueAnimator.ofInt((int)(getLayoutParams().width * 0.1f), getLayoutParams().width).setDuration(duration);
         widthAnimator.addUpdateListener(animation -> {
             Integer value = (Integer) animation.getAnimatedValue();
             backgroundView.getLayoutParams().width = value;

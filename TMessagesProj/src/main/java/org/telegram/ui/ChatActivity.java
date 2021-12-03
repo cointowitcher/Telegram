@@ -20446,6 +20446,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     FullEmojiView fullEmojiView;
     ActionBarPopupWindow fullEmojiPopupWindow;
     String newReaction;
+
     private void showFullEmojiView(FrameLayout emojiView, EmojisScrollComponent emojisScroll, MessageObject messageObject) {
         ChatMessageCell cell = chatAdapter.getRowWithMessageObject(messageObject);
         if (cell == null) {
@@ -20461,6 +20462,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         fullEmojiPopupWindow.showAtLocation(getParentActivity().getWindow().getDecorView(), Gravity.LEFT | Gravity.TOP, 0, 0);
         WeakReference weakReference1 = new WeakReference(fullEmojiPopupWindow);
         WeakReference weakReference2 = new WeakReference(this);
+        String reaction = ((EmojisScrollComponent.EmojisCell) emojiView).reaction.reaction;
         fullEmojiView.setDelegate(new FullEmojiView.FullEmojiViewDelegate() {
             @Override
             public void loadedAnimation() {
@@ -20485,7 +20487,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 cell.chosenReactionAlpha = 1;
                 cell.shouldUpdateReactionChosen = true;
                 chatAdapter.updateRowWithMessageObject(messageObject, false);
-                cell.invalidate();
                 AndroidUtilities.runOnUIThread(() -> {
                     fullEmojiPopupWindow.dismiss(false);
                     chatActivity.fullEmojiPopupWindow = null;
@@ -20499,13 +20500,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 cell.chosenReactionAlpha = 1;
                 cell.shouldUpdateReactionChosen = true;
                 chatAdapter.updateRowWithMessageObject(messageObject, false);
-                cell.invalidate();
                 fullEmojiPopupWindow.dismiss(true);
                 chatActivity.fullEmojiPopupWindow = null;
                 chatActivity.fullEmojiView = null;
             }
         });
-        String reaction = ((EmojisScrollComponent.EmojisCell) emojiView).reaction.reaction;
         if (cell.getMessageObject().isAnyPersonalChosenReaction()) {
             cell.animateChosenReactionDim();
         } else {
@@ -20513,7 +20512,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
         getReactionsManager().sendReaction(messageObject, reaction, ChatActivity.this, (successful) -> {
             if (!successful) {
-                MessageObject.removePersonalChosenReaction(messageObject.messageOwner); // maybe not sure, edge cases to be considered
+                MessageObject.removePersonalChosenReaction(messageObject.messageOwner); // maybe, I'm not sure. edge cases to be considered
             }
             // cool
         });

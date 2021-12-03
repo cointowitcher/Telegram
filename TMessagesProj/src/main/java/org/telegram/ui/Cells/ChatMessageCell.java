@@ -3149,6 +3149,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
+    public void updateFully() {
+        setMessageContent(getMessageObject(), getCurrentMessagesGroup(), isPinnedBottom(), isPinnedTop());
+    }
+
     @SuppressLint("WrongConstant")
     private void setMessageContent(MessageObject messageObject, MessageObject.GroupedMessages groupedMessages, boolean bottomNear, boolean topNear) {
         messageObject.updateChosenReactions();
