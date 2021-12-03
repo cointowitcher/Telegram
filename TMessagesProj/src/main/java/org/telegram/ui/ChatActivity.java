@@ -20449,10 +20449,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     private void showFullEmojiView(FrameLayout emojiView, EmojisScrollComponent emojisScroll, MessageObject messageObject) {
         ChatMessageCell cell = chatAdapter.getRowWithMessageObject(messageObject);
+        getMessagesController().skippedMessageId = messageObject.getId();
         if (cell == null) {
             return;
         }
-        cell.shouldUpdateReactionChosen = false;
         float statusBarHeight = (Build.VERSION.SDK_INT >= 21 && !inBubbleMode ? AndroidUtilities.statusBarHeight : 0);
         fullEmojiView = new FullEmojiView(contentView.getContext());
         fullEmojiView.configure((EmojisScrollComponent.EmojisCell) emojiView, emojisScroll, statusBarHeight);
@@ -20484,9 +20484,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 final ActionBarPopupWindow fullEmojiPopupWindow = (ActionBarPopupWindow)weakReference1.get();
                 final ChatActivity chatActivity = (ChatActivity)weakReference2.get();
                 if (fullEmojiPopupWindow == null || chatActivity == null) { return; }
-                cell.chosenReactionAlpha = 1;
-                cell.shouldUpdateReactionChosen = true;
+                cell.chosenReactionAlpha = null;
                 chatAdapter.updateRowWithMessageObject(messageObject, false);
+                getMessagesController().skippedMessageId = null;
+                getAccountInstance().getReactionsManager().locallyUpdateMessageReactions(messageObject.messageOwner);
                 AndroidUtilities.runOnUIThread(() -> {
                     fullEmojiPopupWindow.dismiss(false);
                     chatActivity.fullEmojiPopupWindow = null;
@@ -20497,18 +20498,21 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             public void shouldCancel() {
                 final ActionBarPopupWindow fullEmojiPopupWindow = (ActionBarPopupWindow)weakReference1.get();
                 final ChatActivity chatActivity = (ChatActivity)weakReference2.get();
-                cell.chosenReactionAlpha = 1;
-                cell.shouldUpdateReactionChosen = true;
+                cell.chosenReactionAlpha = null;
                 chatAdapter.updateRowWithMessageObject(messageObject, false);
+                getMessagesController().skippedMessageId = null;
+                getAccountInstance().getReactionsManager().locallyUpdateMessageReactions(messageObject.messageOwner);
                 fullEmojiPopupWindow.dismiss(true);
                 chatActivity.fullEmojiPopupWindow = null;
                 chatActivity.fullEmojiView = null;
             }
         });
+        MessageObject.addChosenReaction(messageObject.messageOwner, reaction);
         if (cell.getMessageObject().isAnyPersonalChosenReaction()) {
             cell.animateChosenReactionDim();
         } else {
-            cell.chosenReactionAlpha = 0;
+            cell.chosenReactionAlpha = 0f;
+            chatAdapter.updateRowWithMessageObject(messageObject, false);
         }
         getReactionsManager().sendReaction(messageObject, reaction, ChatActivity.this, (successful) -> {
             if (!successful) {
@@ -20516,8 +20520,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
             // cool
         });
-        MessageObject.addChosenReaction(messageObject.messageOwner, reaction);
-        chatAdapter.updateRowWithMessageObject(messageObject, false);
     }
 
     FullEmojiDisappearView fullEmojiDisappearView;
@@ -20556,12 +20558,12 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             public void onEnd() {
                 fullEmojiDisappearPopupWindow.dismiss(false);
                 fullEmojiDisappearView = null;
-                cell.chosenReactionAlpha = 1;
+                cell.chosenReactionAlpha = 1f;
             }
 
             @Override
             public void dimOriginal() {
-                cell.chosenReactionAlpha = 0;
+                cell.chosenReactionAlpha = 0f;
                 cell.invalidate();
             }
         });

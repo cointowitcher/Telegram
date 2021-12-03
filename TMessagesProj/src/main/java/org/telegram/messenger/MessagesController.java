@@ -64,6 +64,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CountDownLatch;
 
 public class MessagesController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
@@ -104,6 +105,8 @@ public class MessagesController extends BaseController implements NotificationCe
     public LongSparseArray<SparseArray<Integer>> printingStringsTypes = new LongSparseArray<>();
     public LongSparseArray<SparseArray<Boolean>>[] sendingTypings = new LongSparseArray[12];
     public ConcurrentHashMap<Long, Integer> onlinePrivacy = new ConcurrentHashMap<>(20, 1.0f, 2);
+    public Integer skippedMessageId = null;
+
     private int lastPrintingStringCount;
 
     private boolean dialogsInTransaction;
@@ -12538,6 +12541,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 TLRPC.Message message;
                 if (baseUpdate instanceof TLRPC.TL_updateEditChannelMessage) {
                     message = ((TLRPC.TL_updateEditChannelMessage) baseUpdate).message;
+                    if (skippedMessageId != null && message.id == skippedMessageId) { return true; }
                     TLRPC.Chat chat = chatsDict.get(message.peer_id.channel_id);
                     if (chat == null) {
                         chat = getChat(message.peer_id.channel_id);
@@ -12548,6 +12552,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                 } else {
                     message = ((TLRPC.TL_updateEditMessage) baseUpdate).message;
+                    if (skippedMessageId != null && message.id == skippedMessageId) { return true; }
                     if (message.dialog_id == clientUserId) {
                         message.unread = false;
                         message.media_unread = false;
@@ -12703,6 +12708,7 @@ public class MessagesController extends BaseController implements NotificationCe
                 updatesOnMainThread.add(baseUpdate);
             } else if (baseUpdate instanceof TLRPC.TL_updateMessageReactions) {
                 TLRPC.TL_updateMessageReactions update = (TLRPC.TL_updateMessageReactions) baseUpdate;
+                if (skippedMessageId != null && update.msg_id == skippedMessageId) { return true; }
                 long dialogId = MessageObject.getPeerId(update.peer);
                 getAccountInstance().getReactionsManager().locallyUpdateMessageReactions(dialogId, update.msg_id, update.reactions);
                 if (updatesOnMainThread == null) {

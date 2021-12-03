@@ -345,7 +345,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private int linkBlockNum;
     private int linkSelectionBlockNum;
 
-    public boolean shouldUpdateReactionChosen = true;
     private boolean inLayout;
 
     private int currentMapProvider;
@@ -749,7 +748,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private boolean replyPressed;
     private TLRPC.PhotoSize currentReplyPhoto;
 
-    public float chosenReactionAlpha = 1;
+    public Float chosenReactionAlpha;
 
     private int drawSideButton;
     private boolean sideButtonPressed;
@@ -2120,7 +2119,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
         boolean result = false;
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            int addXY = AndroidUtilities.dp(5);
+            int addXY = AndroidUtilities.dp(20);
             int reactionsSize = AndroidUtilities.dp(reactionSmallImageSize);
             if (x >= reactionsChosenX - addXY && x <= reactionsChosenX + addXY + reactionsSize && y >= reactionsChosenY - addXY && y <= reactionsChosenY + addXY + reactionsSize) {
                 reactionsChosenPressed = true;
@@ -3157,7 +3156,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private void setMessageContent(MessageObject messageObject, MessageObject.GroupedMessages groupedMessages, boolean bottomNear, boolean topNear) {
         messageObject.updateChosenReactions();
         if (currentMessageObject != messageObject) {
-            chosenReactionAlpha = 1;
+            chosenReactionAlpha = null;
         }
         if (messageObject.checkLayout() || currentPosition != null && lastHeight != AndroidUtilities.displaySize.y) {
             currentMessageObject = null;
@@ -3178,33 +3177,31 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 newReply != lastReplyMessage;
         boolean groupChanged = groupedMessages != currentMessagesGroup;
         boolean pollChanged = false;
-        if (shouldUpdateReactionChosen) {
-            ReactionsManager reactionsManager = AccountInstance.getInstance(currentAccount).getReactionsManager();
-            if (messageObject.isAnyPersonalReaction()) {
-                for (int i = 0; i < messageObject.messageOwner.reactions.results.size(); i++) {
-                    TLRPC.TL_reactionCount reactionCount = messageObject.messageOwner.reactions.results.get(i);
-                    TLRPC.TL_availableReaction availableReaction = reactionsManager.getAvailableReactionFor(reactionCount.reaction);
-                    if (availableReaction == null) {
-                        continue;
-                    }
-                    if (reactionCount.count == 2) {
-                        reactionsChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
-                        reactionsNotChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
-                        break;
-                    }
-                    if (reactionCount.chosen) {
-                        reactionsChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
-                    } else {
-                        reactionsNotChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
-                    }
+        ReactionsManager reactionsManager = AccountInstance.getInstance(currentAccount).getReactionsManager();
+        if (messageObject.isAnyPersonalReaction()) {
+            for (int i = 0; i < messageObject.messageOwner.reactions.results.size(); i++) {
+                TLRPC.TL_reactionCount reactionCount = messageObject.messageOwner.reactions.results.get(i);
+                TLRPC.TL_availableReaction availableReaction = reactionsManager.getAvailableReactionFor(reactionCount.reaction);
+                if (availableReaction == null) {
+                    continue;
+                }
+                if (reactionCount.count == 2) {
+                    reactionsChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
+                    reactionsNotChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
+                    break;
+                }
+                if (reactionCount.chosen) {
+                    reactionsChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
+                } else {
+                    reactionsNotChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
                 }
             }
-            if (!messageObject.isAnyPersonalChosenReaction()) {
-                reactionsChosen.setImageBitmap((Drawable) null);
-            }
-            if (!messageObject.isAnyPersonalNotChosenReaction()) {
-                reactionsNotChosen.setImageBitmap((Drawable) null);
-            }
+        }
+        if (!messageObject.isAnyPersonalChosenReaction()) {
+            reactionsChosen.setImageBitmap((Drawable) null);
+        }
+        if (!messageObject.isAnyPersonalNotChosenReaction()) {
+            reactionsNotChosen.setImageBitmap((Drawable) null);
         }
         if (drawCommentButton || drawSideButton == 3 && !((hasDiscussion && messageObject.isLinkedToChat(linkedChatId) || isRepliesChat) && (currentPosition == null || currentPosition.siblingHeights == null && (currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 || currentPosition.siblingHeights != null && (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) == 0))) {
             dataChanged = true;
@@ -8376,6 +8373,19 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return currentMessagesGroup == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0;
     }
 
+    private void drawMultReactions(Canvas canvas) {
+        float top = layoutHeight - AndroidUtilities.dp(2) + transitionParams.deltaBottom;
+//        canvas.translate(top, 0);
+        Rect r = new Rect();
+        r.left = 0;
+        r.top = 0;
+        r.right = 200;
+        r.bottom = 200;
+        Paint p = new Paint();
+        p.setColor(0x9879ff32);
+        canvas.drawRect(r, p);
+    }
+
     private void drawBotButtons(Canvas canvas, ArrayList<BotButton> botButtons, float alpha) {
         int addX;
         if (currentMessageObject.isOutOwner()) {
@@ -10485,6 +10495,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 drawBotButtons(canvas, botButtons, transitionParams.animateChangeProgress);
             }
         }
+        drawMultReactions(canvas);
 
         if (drawSideButton != 0) {
             if (currentMessageObject.isOutOwner()) {
@@ -12058,7 +12069,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
             }
         }
-        reactionsChosen.setAlpha(chosenReactionAlpha);
+        if (chosenReactionAlpha != null) {
+            reactionsChosen.setAlpha(chosenReactionAlpha);
+        } else {
+            reactionsChosen.setAlpha(1);
+        }
 //        if (!currentMessageObject.isAnyNotChosenReaction) {
 //            reactionsNotChosen.setAlpha(0);
 //        }
