@@ -20253,7 +20253,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         animators.add(ObjectAnimator.ofFloat(mentiondownButton, View.ALPHA, 1.0f));
                     }
                     scrimAnimatorSet.playTogether(animators);
-                    scrimAnimatorSet.setDuration(2000);
+                    scrimAnimatorSet.setDuration(220);
                     scrimAnimatorSet.addListener(new AnimatorListenerAdapter() {
                         @Override
                         public void onAnimationEnd(Animator animation) {
@@ -20272,7 +20272,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
             };
             scrimPopupWindow.setPauseNotifications(true);
-            scrimPopupWindow.setDismissAnimationDuration(2000);
+            scrimPopupWindow.setDismissAnimationDuration(220);
             scrimPopupWindow.setOutsideTouchable(true);
             scrimPopupWindow.setClippingEnabled(true);
             scrimPopupWindow.setAnimationStyle(R.style.PopupContextAnimation);
@@ -20451,6 +20451,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (cell == null) {
             return;
         }
+        cell.shouldUpdateReactionChosen = false;
         float statusBarHeight = (Build.VERSION.SDK_INT >= 21 && !inBubbleMode ? AndroidUtilities.statusBarHeight : 0);
         fullEmojiView = new FullEmojiView(contentView.getContext());
         fullEmojiView.configure((EmojisScrollComponent.EmojisCell) emojiView, emojisScroll, statusBarHeight);
@@ -20482,12 +20483,26 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 final ChatActivity chatActivity = (ChatActivity)weakReference2.get();
                 if (fullEmojiPopupWindow == null || chatActivity == null) { return; }
                 cell.chosenReactionAlpha = 1;
+                cell.shouldUpdateReactionChosen = true;
+                chatAdapter.updateRowWithMessageObject(messageObject, false);
                 cell.invalidate();
                 AndroidUtilities.runOnUIThread(() -> {
                     fullEmojiPopupWindow.dismiss(false);
                     chatActivity.fullEmojiPopupWindow = null;
                     chatActivity.fullEmojiView = null;
-                }, 50);
+                }, 20);
+            }
+            @Override
+            public void shouldCancel() {
+                final ActionBarPopupWindow fullEmojiPopupWindow = (ActionBarPopupWindow)weakReference1.get();
+                final ChatActivity chatActivity = (ChatActivity)weakReference2.get();
+                cell.chosenReactionAlpha = 1;
+                cell.shouldUpdateReactionChosen = true;
+                chatAdapter.updateRowWithMessageObject(messageObject, false);
+                cell.invalidate();
+                fullEmojiPopupWindow.dismiss(true);
+                chatActivity.fullEmojiPopupWindow = null;
+                chatActivity.fullEmojiView = null;
             }
         });
         String reaction = ((EmojisScrollComponent.EmojisCell) emojiView).reaction.reaction;
@@ -21491,6 +21506,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             return false;
         } else if (chatActivityEnterView != null && chatActivityEnterView.botCommandsMenuIsShowing()) {
             chatActivityEnterView.hideBotCommands();
+            return false;
+        } else if (fullEmojiPopupWindow != null) {
+            return false;
+        } else if (fullEmojiDisappearPopupWindow != null) {
             return false;
         }
         if (backToPreviousFragment != null) {

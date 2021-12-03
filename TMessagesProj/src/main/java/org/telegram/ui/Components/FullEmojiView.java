@@ -57,6 +57,7 @@ public class FullEmojiView extends FrameLayout {
         delegate = null;
         delegateImg = null;
         delegateImg2 = null;
+        emojiView = null;
     }
 
     public void setDelegate(FullEmojiViewDelegate delegate) {
@@ -92,6 +93,9 @@ public class FullEmojiView extends FrameLayout {
         effectsImageView = new BackupImageView(getContext());
         effectsImageView.setAspectFit(true);
         effectsImageView.setLayerNum(1);
+        effectsImageView.imageReceiver.setAllowDecodeSingleFrame(false);
+        effectsImageView.imageReceiver.setAllowStartLottieAnimation(false);
+        effectsImageView.imageReceiver.setAutoRepeat(0);
 
         staticImageView = new BackupImageView(getContext());
         staticImageView.setAspectFit(true);
@@ -107,23 +111,43 @@ public class FullEmojiView extends FrameLayout {
             public void onAnimationReady(ImageReceiver imageReceiver) {
                 FullEmojiView fullEmojiView = (FullEmojiView) weakReference1.get();
                 if(fullEmojiView == null) { return; }
-                fullEmojiView.delegate.loadedAnimation();
-                fullEmojiView.imageView.setAlpha(1);
-                fullEmojiView.imageView.setVisibility(VISIBLE);
-                fullEmojiView.imageView.imageReceiver.startLottie();
-                fullEmojiView.animatorSet.start();
-                AndroidUtilities.runOnUIThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        fullEmojiView.emojiView.imageView.setAlpha(0);
-                    }
-                }, 10);
-                AndroidUtilities.runOnUIThread(() -> {
-                    fullEmojiView.delegate.finishedAppearing();
-                }, fullEmojiView.imageView.imageReceiver.getLottieAnimation().getDuration());
+                fullEmojiView.regularImageLoaded = true;
+                startAnimation();
             }
         };
         imageView.imageReceiver.setDelegate(delegateImg);
+        effectsImageView.imageReceiver.setDelegate(new ImageReceiver.ImageReceiverDelegate() {
+            @Override
+            public void didSetImage(ImageReceiver imageReceiver, boolean set, boolean thumb, boolean memCache) {
+
+            }
+            @Override
+            public void onAnimationReady(ImageReceiver imageReceiver) {
+                FullEmojiView fullEmojiView = (FullEmojiView) weakReference1.get();
+                if(fullEmojiView == null) { return; }
+                fullEmojiView.effectsImageLoaded = true;
+                startAnimation();
+            }
+        });
+    }
+
+    boolean regularImageLoaded = false;
+    boolean effectsImageLoaded = false;
+    boolean didStart = false;
+    void startAnimation() {
+        if (!regularImageLoaded || !effectsImageLoaded) { return; }
+        didStart = true;
+        FullEmojiView fullEmojiView = this;
+        fullEmojiView.delegate.loadedAnimation();
+        fullEmojiView.imageView.setAlpha(1);
+        fullEmojiView.imageView.setVisibility(VISIBLE);
+        fullEmojiView.imageView.imageReceiver.startLottie();
+        fullEmojiView.animatorSet.start();
+        fullEmojiView.effectsImageView.imageReceiver.startLottie();
+        fullEmojiView.emojiView.imageView.setAlpha(0);
+        AndroidUtilities.runOnUIThread(() -> {
+            fullEmojiView.delegate.finishedAppearing();
+        }, fullEmojiView.imageView.imageReceiver.getLottieAnimation().getDuration());
     }
 
 
@@ -182,18 +206,16 @@ public class FullEmojiView extends FrameLayout {
                 );
         animatorSet.setDuration(300);
 
-        delegateImg2 = new ImageReceiver.ImageReceiverDelegate() {
-            @Override
-            public void didSetImage(ImageReceiver imageReceiver, boolean set, boolean thumb, boolean memCache) {
-            }
-            @Override
-            public void onAnimationReady(ImageReceiver imageReceiver) {
-                imageReceiver.startLottie();
-            }
-        };
-//        effectsImageView.imageReceiver.setDelegate(delegateImg2);
         effectsImageView.setImage(ImageLocation.getForDocument(emojiView.reaction.effect_animation), null, "webp", null, this);
         imageView.setImage(ImageLocation.getForDocument(emojiView.reaction.activate_animation), null, "webp", null, this);
+        WeakReference weakReference1 = new WeakReference(this);
+        AndroidUtilities.runOnUIThread(() -> {
+            FullEmojiView fullEmojiView = (FullEmojiView) weakReference1.get();
+            if(fullEmojiView == null) { return; }
+            if (!didStart) {
+                fullEmojiView.delegate.shouldCancel();
+            }
+        }, 7000);
     }
 
     public void disappear(int[] endLocation) {
@@ -250,10 +272,10 @@ public class FullEmojiView extends FrameLayout {
             public void onAnimationEnd(Animator animation) {
                 FullEmojiView fullEmojiView = (FullEmojiView) weakReference1.get();
                 if(fullEmojiView == null) { return; }
+                fullEmojiView.v3.setAlpha(1);
                 if (fullEmojiView.delegate != null) {
                     fullEmojiView.delegate.shouldDisappear();
                 }
-                fullEmojiView.v3.setAlpha(1);
             }
         });
     }
@@ -262,5 +284,6 @@ public class FullEmojiView extends FrameLayout {
         void loadedAnimation();
         void finishedAppearing();
         void shouldDisappear();
+        void shouldCancel();
     }
 }

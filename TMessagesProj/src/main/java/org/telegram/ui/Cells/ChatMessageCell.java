@@ -345,6 +345,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private int linkBlockNum;
     private int linkSelectionBlockNum;
 
+    public boolean shouldUpdateReactionChosen = true;
     private boolean inLayout;
 
     private int currentMapProvider;
@@ -3173,31 +3174,33 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 newReply != lastReplyMessage;
         boolean groupChanged = groupedMessages != currentMessagesGroup;
         boolean pollChanged = false;
-        ReactionsManager reactionsManager = AccountInstance.getInstance(currentAccount).getReactionsManager();
-        if (messageObject.isAnyPersonalReaction()) {
-            for (int i = 0; i < messageObject.messageOwner.reactions.results.size(); i++) {
-                TLRPC.TL_reactionCount reactionCount = messageObject.messageOwner.reactions.results.get(i);
-                TLRPC.TL_availableReaction availableReaction = reactionsManager.getAvailableReactionFor(reactionCount.reaction);
-                if (availableReaction == null) {
-                    continue;
-                }
-                if (reactionCount.count == 2) {
-                    reactionsChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
-                    reactionsNotChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
-                    break;
-                }
-                if (reactionCount.chosen) {
-                    reactionsChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
-                } else {
-                    reactionsNotChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
+        if (shouldUpdateReactionChosen) {
+            ReactionsManager reactionsManager = AccountInstance.getInstance(currentAccount).getReactionsManager();
+            if (messageObject.isAnyPersonalReaction()) {
+                for (int i = 0; i < messageObject.messageOwner.reactions.results.size(); i++) {
+                    TLRPC.TL_reactionCount reactionCount = messageObject.messageOwner.reactions.results.get(i);
+                    TLRPC.TL_availableReaction availableReaction = reactionsManager.getAvailableReactionFor(reactionCount.reaction);
+                    if (availableReaction == null) {
+                        continue;
+                    }
+                    if (reactionCount.count == 2) {
+                        reactionsChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
+                        reactionsNotChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
+                        break;
+                    }
+                    if (reactionCount.chosen) {
+                        reactionsChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
+                    } else {
+                        reactionsNotChosen.setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", null, 0);
+                    }
                 }
             }
-        }
-        if (!messageObject.isAnyPersonalChosenReaction()) {
-            reactionsChosen.setImageBitmap((Drawable) null);
-        }
-        if (!messageObject.isAnyPersonalNotChosenReaction()) {
-            reactionsNotChosen.setImageBitmap((Drawable) null);
+            if (!messageObject.isAnyPersonalChosenReaction()) {
+                reactionsChosen.setImageBitmap((Drawable) null);
+            }
+            if (!messageObject.isAnyPersonalNotChosenReaction()) {
+                reactionsNotChosen.setImageBitmap((Drawable) null);
+            }
         }
         if (drawCommentButton || drawSideButton == 3 && !((hasDiscussion && messageObject.isLinkedToChat(linkedChatId) || isRepliesChat) && (currentPosition == null || currentPosition.siblingHeights == null && (currentPosition.flags & MessageObject.POSITION_FLAG_BOTTOM) != 0 || currentPosition.siblingHeights != null && (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) == 0))) {
             dataChanged = true;
@@ -12089,9 +12092,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
         int reactionsWidthHeight = AndroidUtilities.dp(reactionSmallImageSize);
         int reactionsChosenX = AndroidUtilities.dp(reactionSmallSpacing);
-        int reactionsNotChosenX = reactionsChosenX;
+        int reactionsNotChosenX = reactionsChosenX * 2;
         if (currentMessageObject.isAnyPersonalChosenReaction()) {
-            reactionsNotChosenX = AndroidUtilities.dp(reactionSmallSpacing) * 2 + reactionsWidthHeight;
+            reactionsNotChosenX += reactionsWidthHeight;
         }
 
         if (shouldDrawTimeOnMedia()) {
