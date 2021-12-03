@@ -96,6 +96,7 @@ public class EmojisScrollComponent extends FrameLayout {
 
         linearLayoutScroll = new LinearLayout(getContext());
         scrollView.addView(linearLayoutScroll, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT));
+        ImageLoader.getInstance().clearMemory();
     }
 
     public void addItems(ArrayList<TLRPC.TL_availableReaction> reactions) {
@@ -187,7 +188,6 @@ public class EmojisScrollComponent extends FrameLayout {
             imageView.setAspectFit(true);
             imageView.setLayerNum(1);
             addView(imageView);
-            imageView.imageReceiver.setAllowStartLottieAnimation(false);
         }
 
         void configure(TLRPC.TL_availableReaction reaction) {
@@ -196,7 +196,6 @@ public class EmojisScrollComponent extends FrameLayout {
             imageView.setLayoutParams(LayoutHelper.createFrame(40, 40, Gravity.CENTER, 0, 0, 0, 0));
             imageView.setAspectFit(true);
             imageView.setLayerNum(2);
-            imageView.imageReceiver.setAllowDecodeSingleFrame(true);
             imageView.imageReceiver.setAllowStartLottieAnimation(false);
             imageView.imageReceiver.setAutoRepeat(0);
 //            receiverJustForClickedImage.setImage(ImageLocation.getForDocument(reaction.activate_animation), null, null, "webp", null);
@@ -204,11 +203,11 @@ public class EmojisScrollComponent extends FrameLayout {
                 @Override
                 public void didSetImage(ImageReceiver imageReceiver, boolean set, boolean thumb, boolean memCache) {
                     didSetImage = true;
+
                     tryPlay();
                 }
             });
             imageView.setImage(ImageLocation.getForDocument(reaction.select_animation), "66_66", null, svgThumb, this);
-            imageView.imageReceiver.setZeroFrame();
         }
 
         void tryPlay() {
@@ -220,7 +219,6 @@ public class EmojisScrollComponent extends FrameLayout {
             if (imageView == null || imageView.imageReceiver == null || imageView.imageReceiver.getLottieAnimation() == null) {
                 return;
             }
-            imageView.imageReceiver.setZeroFrame();
             imageView.imageReceiver.startLottie();
         }
     }

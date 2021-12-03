@@ -91,10 +91,7 @@ public class FullEmojiView extends FrameLayout {
 
         effectsImageView = new BackupImageView(getContext());
         effectsImageView.setAspectFit(true);
-        effectsImageView.setLayerNum(2);
-        effectsImageView.imageReceiver.setAllowDecodeSingleFrame(true);
-        effectsImageView.imageReceiver.setAllowStartLottieAnimation(false);
-        effectsImageView.imageReceiver.setAutoRepeat(0);
+        effectsImageView.setLayerNum(1);
 
         staticImageView = new BackupImageView(getContext());
         staticImageView.setAspectFit(true);
@@ -113,7 +110,6 @@ public class FullEmojiView extends FrameLayout {
                 fullEmojiView.delegate.loadedAnimation();
                 fullEmojiView.imageView.setAlpha(1);
                 fullEmojiView.imageView.setVisibility(VISIBLE);
-                fullEmojiView.imageView.imageReceiver.setZeroFrame();
                 fullEmojiView.imageView.imageReceiver.startLottie();
                 fullEmojiView.animatorSet.start();
                 AndroidUtilities.runOnUIThread(new Runnable() {
@@ -192,15 +188,12 @@ public class FullEmojiView extends FrameLayout {
             }
             @Override
             public void onAnimationReady(ImageReceiver imageReceiver) {
-                effectsImageView.imageReceiver.setZeroFrame();
                 imageReceiver.startLottie();
             }
         };
-        effectsImageView.imageReceiver.setDelegate(delegateImg2);
+//        effectsImageView.imageReceiver.setDelegate(delegateImg2);
         effectsImageView.setImage(ImageLocation.getForDocument(emojiView.reaction.effect_animation), null, "webp", null, this);
-        effectsImageView.imageReceiver.setZeroFrame();
         imageView.setImage(ImageLocation.getForDocument(emojiView.reaction.activate_animation), null, "webp", null, this);
-        imageView.imageReceiver.setZeroFrame();
     }
 
     public void disappear(int[] endLocation) {

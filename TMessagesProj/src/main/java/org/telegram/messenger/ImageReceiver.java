@@ -1359,13 +1359,6 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
         }
     }
 
-    public void setZeroFrame() {
-        RLottieDrawable lottieDrawable = getLottieAnimation();
-        if (lottieDrawable != null) {
-            lottieDrawable.setCurrentFrame(0, false, true);
-        }
-    }
-
     public boolean draw(Canvas canvas) {
         boolean result = false;
         if (gradientBitmap != null && currentImageKey != null) {
