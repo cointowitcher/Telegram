@@ -39,6 +39,7 @@ import android.graphics.drawable.RippleDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.SystemClock;
 import android.text.Layout;
 import android.text.Spannable;
@@ -65,6 +66,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.animation.Animation;
 import android.view.animation.Interpolator;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.core.graphics.ColorUtils;
@@ -141,11 +143,13 @@ import org.telegram.ui.PinchToZoomHelper;
 import org.telegram.ui.SecretMediaViewer;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Random;
 
 public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate, ImageReceiver.ImageReceiverDelegate, DownloadController.FileDownloadProgressListener, TextSelectionHelper.SelectableView {
 
@@ -3152,8 +3156,30 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         setMessageContent(getMessageObject(), getCurrentMessagesGroup(), isPinnedBottom(), isPinnedTop());
     }
 
+    Handler h;
+    String reactionsSnapshot;
+
     @SuppressLint("WrongConstant")
     private void setMessageContent(MessageObject messageObject, MessageObject.GroupedMessages groupedMessages, boolean bottomNear, boolean topNear) {
+        WeakReference ss = new WeakReference(this);
+        if (currentMessageObject != messageObject) {
+            h = null;
+        }
+        if (false && messageObject.messageText.toString().equals("Dhjd hi ifof") && h == null) {
+            h = new Handler();
+            h.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    if (ss == null) {
+                        return;
+                    }
+                    MessageObject.addChosenReaction(messageObject.messageOwner, String.valueOf((new Random()).nextInt(500)));
+                    messageObject.forceUpdate = true;
+                    setMessageContent(messageObject, getCurrentMessagesGroup(), bottomNear, topNear);
+                    h.postDelayed(this, 1000);
+                }
+            }, 1000);
+        }
         messageObject.updateChosenReactions();
         if (currentMessageObject != messageObject) {
             chosenReactionAlpha = null;
@@ -3166,10 +3192,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         lastWidth = getParentWidth();
         isRoundVideo = messageObject != null && messageObject.isRoundVideo();
         TLRPC.Message newReply = messageObject.hasValidReplyMessageObject() ? messageObject.replyMessageObject.messageOwner : null;
+        String newReactionsSnapshot = messageObject.generateReactionsSnapshot();
+        boolean isReactionsShapshotDifferent = reactionsSnapshot != null && reactionsSnapshot != newReactionsSnapshot;
         boolean messageIdChanged = currentMessageObject == null || currentMessageObject.getId() != messageObject.getId();
         boolean messageChanged = currentMessageObject != messageObject || messageObject.forceUpdate
                 || (isRoundVideo && isPlayingRound != (MediaController.getInstance().isPlayingMessage(currentMessageObject) && delegate != null && !delegate.keyboardIsOpened())) ||
-                lastPersonalChosenReaction != messageObject.personalChosenReaction || lastPersonalNotChosenReaction != messageObject.personalNotChosenReaction;
+                lastPersonalChosenReaction != messageObject.personalChosenReaction || lastPersonalNotChosenReaction != messageObject.personalNotChosenReaction || isReactionsShapshotDifferent;
         boolean dataChanged = currentMessageObject != null && currentMessageObject.getId() == messageObject.getId() && lastSendState == MessageObject.MESSAGE_SEND_STATE_EDITING && messageObject.isSent() ||
                 currentMessageObject == messageObject && (isUserDataChanged() || photoNotSet) ||
                 lastPostAuthor != messageObject.messageOwner.post_author ||
@@ -3177,6 +3205,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 newReply != lastReplyMessage;
         boolean groupChanged = groupedMessages != currentMessagesGroup;
         boolean pollChanged = false;
+
+        reactionsSnapshot = newReactionsSnapshot;
+
         ReactionsManager reactionsManager = AccountInstance.getInstance(currentAccount).getReactionsManager();
         if (messageObject.isAnyPersonalReaction()) {
             for (int i = 0; i < messageObject.messageOwner.reactions.results.size(); i++) {
@@ -5985,6 +6016,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
 //            boolean test123 = messageObject.messageOwner.reactions != null && !messageObject.messageOwner.reactions.results.isEmpty();
             boolean test123 = false;
+            messageObject.generateReactionsLayout(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
+//            substractBackgroundHeight2 = messageObject.getReactionsHeight();
+
             if (test123 || !messageObject.isRestrictedMessage && currentPosition == null && (messageObject.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup)) {
                 int rows;
 
@@ -6106,9 +6140,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 //                    }
                 }
                 widthForButtons = maxButtonsWidth;
-            } else {
-                substractBackgroundHeight = 0;
-                keyboardHeight = 0;
             }
             if (drawCommentButton) {
                 totalHeight += AndroidUtilities.dp(shouldDrawTimeOnMedia() ? 41.3f : 43);
@@ -6244,6 +6275,15 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
         accessibilityVirtualViewBounds.clear();
         transitionParams.updatePhotoImageX = true;
+
+        if (isReactionsShapshotDifferent) {
+            float previousReactionsHeight = messageObject.getReactionsHeight();
+            messageObject.generateReactionsLayout(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
+            if (Math.abs(messageObject.getReactionsHeight() - previousReactionsHeight) > 0.5) {
+                messageObject.forceUpdate = true;
+                setMessageObject(messageObject, groupedMessages, bottomNear, topNear);
+            }
+        }
     }
 
     public void checkVideoPlayback(boolean allowStart, Bitmap thumb) {
@@ -7054,7 +7094,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             inLayout = false;
         }
         updateSelectionTextPosition();
-        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), totalHeight + keyboardHeight);
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), totalHeight + keyboardHeight + currentMessageObject.getReactionsHeight());
     }
 
     public void forceResetMessageObject() {
@@ -7108,7 +7148,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         int currentSize = getMeasuredHeight() + (getMeasuredWidth() << 16);
         if (lastSize != currentSize || !wasLayout) {
             layoutWidth = getMeasuredWidth();
-            layoutHeight = getMeasuredHeight() - substractBackgroundHeight;
+            layoutHeight = getMeasuredHeight() - substractBackgroundHeight - currentMessageObject.getReactionsHeight();
             if (timeTextWidth < 0) {
                 timeTextWidth = AndroidUtilities.dp(10);
             }
@@ -8374,16 +8414,40 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     private void drawMultReactions(Canvas canvas) {
-        float top = layoutHeight - AndroidUtilities.dp(2) + transitionParams.deltaBottom;
-//        canvas.translate(top, 0);
-        Rect r = new Rect();
-        r.left = 0;
-        r.top = 0;
-        r.right = 200;
-        r.bottom = 200;
-        Paint p = new Paint();
-        p.setColor(0x9879ff32);
-        canvas.drawRect(r, p);
+        if (!currentMessageObject.isReactions2()) { return; }
+        int previousReactionsHeight = currentMessageObject.getReactionsHeight();
+//        currentMessageObject.generateReactionsLayout(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
+        canvas.save();
+        int top = (int)(layoutHeight - AndroidUtilities.dp(2) + transitionParams.deltaBottom);
+        canvas.translate(backgroundDrawableLeft, top);
+        int currentLine = 0;
+        for(int i = 0; i < currentMessageObject.messageOwner.reactions.results.size(); i++) {
+            int width = currentMessageObject.reactionsWidths.get(i);
+            int translationX = currentMessageObject.reactionsTranslationsX.get(i);
+            int translationY = currentMessageObject.reactionsTranslationsY.get(i);
+            String reactionText = currentMessageObject.reactionsTexts.get(i);
+            canvas.save();
+            canvas.translate(translationX, translationY);
+            Rect rect = new Rect(0, 0, width, MessageObject.defaultReactionItemHeight);
+            Paint paint = new Paint();
+            paint.setColor(0x99784391);
+            canvas.drawRect(rect, paint);
+
+            MessageObject.TextLayoutBlock textLayoutBlock = new MessageObject.TextLayoutBlock();
+
+            TextView textView = new TextView(getContext());
+            textView.setTextColor(Color.RED);
+            textView.setText("NUIFGEWN");
+            textView.onPreDraw();
+            textView.draw(canvas);
+            canvas.restore();
+        }
+        canvas.restore();
+        if (previousReactionsHeight != currentMessageObject.getReactionsHeight()) {
+//            currentMessageObject.forceUpdate = true;
+//            setMessageObject(getMessageObject(), getCurrentMessagesGroup(), topNearToSet, bottomNearToSet);
+//            substractBackgroundHeight = keyboardHeight = getMessageObject().getReactionsHeight();
+        }
     }
 
     private void drawBotButtons(Canvas canvas, ArrayList<BotButton> botButtons, float alpha) {
@@ -10495,7 +10559,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 drawBotButtons(canvas, botButtons, transitionParams.animateChangeProgress);
             }
         }
-        drawMultReactions(canvas);
 
         if (drawSideButton != 0) {
             if (currentMessageObject.isOutOwner()) {
@@ -10621,6 +10684,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             canvas.restoreToCount(restore);
         }
         updateSelectionTextPosition();
+        drawMultReactions(canvas);
     }
 
     @SuppressLint("WrongCall")

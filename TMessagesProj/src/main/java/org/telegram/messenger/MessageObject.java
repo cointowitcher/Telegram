@@ -8,6 +8,7 @@
 
 package org.telegram.messenger;
 
+import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
@@ -4399,6 +4400,83 @@ public class MessageObject {
             }
         }
         return maxWidth;
+    }
+
+    public boolean isReactions2() {
+        return !isUserOrEncrypted() && messageOwner.reactions != null && !messageOwner.reactions.results.isEmpty();
+    }
+
+    public ArrayList<Integer> reactionsWidths = new ArrayList<>();
+    public ArrayList<Integer> reactionsLines = new ArrayList<>();
+    public ArrayList<String> reactionsTexts = new ArrayList<>();
+    public ArrayList<Integer> reactionsTranslationsX = new ArrayList<>();
+    public ArrayList<Integer> reactionsTranslationsY = new ArrayList<>();
+    private int reactionsHeight = 0;
+
+    public int getReactionsHeight() {
+        return reactionsHeight;
+    }
+
+    public static int defaultReactionLinePaddingTop = AndroidUtilities.dp(5.4545f);
+    public static int defaultReactionLeftPadding = AndroidUtilities.dp(8);
+    public static int defaultReactionImageSize = AndroidUtilities.dp(21);
+    public static int defaultReactionInterItemSpacing = AndroidUtilities.dp(6.1818f);
+    public static int defaultReactionItemHeight = AndroidUtilities.dp(28.363636f);
+    public static int defaultReactionRightPadding = AndroidUtilities.dp(10);
+
+    public String generateReactionsSnapshot() {
+        if (messageOwner.reactions == null) return "";
+        String result = "";
+        for(int i = 0; i < messageOwner.reactions.results.size(); i++) {
+            TLRPC.TL_reactionCount reactionCount = messageOwner.reactions.results.get(i);
+            result += reactionCount.reaction + String.valueOf(reactionCount.count) + String.valueOf(reactionCount.chosen);
+        }
+        return result;
+    }
+
+    public void generateReactionsLayout(float maxWidth) {
+        // STODO: Check if width changed or reactions
+        reactionsWidths.clear();
+        reactionsLines.clear();
+        reactionsTexts.clear();
+        reactionsTranslationsX.clear();
+        reactionsTranslationsY.clear();
+        reactionsHeight = 0;
+        if (messageOwner.reactions == null) { return; }
+
+        Paint textPaint = new Paint();
+        textPaint.setTextSize(AndroidUtilities.dp(13));
+        int lineWidth = 0;
+        int lineCount = 0;
+        if (messageOwner.reactions.results.size() != 0) {
+            reactionsHeight += defaultReactionLinePaddingTop + defaultReactionItemHeight;
+        }
+        int reactionsX = 0;
+        boolean isNewLine = true;
+        for(int i = 0; i < messageOwner.reactions.results.size(); i++) {
+            TLRPC.TL_reactionCount reactionCount = messageOwner.reactions.results.get(i);
+            String countStringRepr = String.valueOf(reactionCount.count);
+            int width = defaultReactionLeftPadding + defaultReactionImageSize + (int)textPaint.measureText(countStringRepr) + defaultReactionRightPadding;
+            if(width + lineWidth + defaultReactionInterItemSpacing > maxWidth) {
+                lineWidth = width + defaultReactionInterItemSpacing;
+                reactionsX = 0;
+                lineCount += 1;
+                reactionsHeight += defaultReactionLinePaddingTop + defaultReactionItemHeight;
+            } else {
+                lineWidth += width + defaultReactionInterItemSpacing;
+                if (!isNewLine) {
+                    reactionsX = reactionsTranslationsX.get(i - 1) + reactionsWidths.get(i - 1) + defaultReactionInterItemSpacing;
+                }
+                isNewLine = false;
+            }
+            reactionsTranslationsY.add(reactionsHeight - defaultReactionItemHeight);
+            reactionsTranslationsX.add(reactionsX);
+
+
+            reactionsWidths.add(width);
+            reactionsLines.add(lineCount);
+            reactionsTexts.add(countStringRepr);
+        }
     }
 
     public void generateLayout(TLRPC.User fromUser) {

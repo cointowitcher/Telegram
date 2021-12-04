@@ -20425,6 +20425,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     Timer pollingTimer;
     private void enablePollingReactionEmojis() {
+        if (true) { return; }
         if (pollingTimer != null) { return; }
         pollingTimer = new Timer();
         pollingTimer.schedule(new TimerTask() {
