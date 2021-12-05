@@ -51,6 +51,7 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.text.style.URLSpan;
+import android.util.Pair;
 import android.util.Property;
 import android.util.SparseArray;
 import android.util.StateSet;
@@ -693,6 +694,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private boolean forwardNamePressed;
     private boolean forwardBotPressed;
 
+    private ArrayList<ImageReceiver> multipleReactionsReceivers;
+
     private ImageReceiver locationImageReceiver;
     private ImageReceiver reactionsChosen;
     private ImageReceiver reactionsNotChosen;
@@ -914,6 +917,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
         reactionsChosen = new ImageReceiver(this);
         reactionsNotChosen = new ImageReceiver(this);
+        multipleReactionsReceivers = new ArrayList<>();
+        reactionsLocations = new HashMap<>();
 
         TAG = DownloadController.getInstance(currentAccount).generateObserverTag();
 
@@ -3051,6 +3056,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         locationImageReceiver.onDetachedFromWindow();
         reactionsChosen.onDetachedFromWindow();
         reactionsNotChosen.onDetachedFromWindow();
+        for(int i = 0; i < multipleReactionsReceivers.size(); i++) {
+            multipleReactionsReceivers.get(i).onDetachedFromWindow();
+        }
         photoImage.onDetachedFromWindow();
         if (addedForTest && currentUrl != null && currentWebFile != null) {
             ImageLoader.getInstance().removeTestWebFile(currentUrl);
@@ -3124,6 +3132,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         locationImageReceiver.onAttachedToWindow();
         reactionsChosen.onAttachedToWindow();
         reactionsNotChosen.onAttachedToWindow();
+        for(int i = 0; i < multipleReactionsReceivers.size(); i++) {
+            multipleReactionsReceivers.get(i).onAttachedToWindow();
+        }
         if (photoImage.onAttachedToWindow()) {
             if (drawPhotoImage) {
                 updateButtonState(false, false, false);
@@ -8415,30 +8426,97 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return currentMessagesGroup == null || (currentPosition.flags & MessageObject.POSITION_FLAG_TOP) != 0;
     }
 
+    public int[] getLocationInformationOfMultipleReaction(String reaction) { // Output: (w,h,x,y)
+        Pair<Integer, Integer> pair = reactionsLocations.get(reaction);
+        if (pair == null) { return null; }
+        int[] loc = new int[2];
+        getLocationInWindow(loc);
+
+        int[] args = new int[4];
+        args[0] = MessageObject.defaultReactionImageSize;
+        args[1] = MessageObject.defaultReactionImageSize;
+        args[2] = loc[0] + pair.first + MessageObject.defaultReactionImageLeftPadding;
+        args[3] = loc[1] + pair.second + MessageObject.defaultReactionItemImageTopPadding;
+        return args;
+    }
+
+    private HashMap<String, Pair<Integer, Integer>> reactionsLocations;
+
     private void drawMultReactions(Canvas canvas) {
         if (!currentMessageObject.isReactions2()) { return; }
+        if (currentMessageObject.messageOwner.reactions.results.size() != multipleReactionsReceivers.size()) {
+            boolean shouldAdd = currentMessageObject.messageOwner.reactions.results.size() > multipleReactionsReceivers.size();
+            int change = Math.abs(currentMessageObject.messageOwner.reactions.results.size() - multipleReactionsReceivers.size());
+            for(int i = 0; i < change; i++) {
+                if (shouldAdd) {
+                    multipleReactionsReceivers.add(new ImageReceiver());
+                } else {
+                    multipleReactionsReceivers.remove(multipleReactionsReceivers.size() - 1);
+                }
+            }
+        }
+        reactionsLocations.clear();
 //        currentMessageObject.generateReactionsLayout(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
         canvas.save();
-        int top = (int)(layoutHeight - AndroidUtilities.dp(2) + transitionParams.deltaBottom);
-        canvas.translate(backgroundDrawableLeft, top);
+        int top = layoutHeight - AndroidUtilities.dp(2);
+        canvas.translate(backgroundDrawableLeft, top + transitionParams.deltaBottom);
         int currentLine = 0;
         int length = currentMessageObject.messageOwner.reactions.results.size();
         for(int i = 0; i < length; i++) {
+            TLRPC.TL_availableReaction availableReaction = currentMessageObject.reactionsImage.get(i);
+            if (availableReaction == null) { continue; }
             int width = currentMessageObject.reactionsWidths.get(i);
             int translationX = currentMessageObject.reactionsTranslationsX.get(i);
             int translationY = currentMessageObject.reactionsTranslationsY.get(i);
             String reactionText = currentMessageObject.reactionsTexts.get(i);
             canvas.save();
             canvas.translate(translationX, translationY);
-            Rect rect = new Rect(0, 0, width, MessageObject.defaultReactionItemHeight);
-            Paint paint = new Paint();
-            paint.setColor(0x99784391);
+            reactionsLocations.put(availableReaction.reaction, new Pair<>(backgroundDrawableLeft + translationX, top + translationY));
+            // Scale
             if (transitionParams.addedCount >= length - i) {
                 float scaleBasedOnItem = transitionParams.reactionsTransitionAlpha - 0.25f * (transitionParams.addedCount - (length + 1 - i));
                 float scale = Math.min(1f, Math.max(0f, scaleBasedOnItem));
                 canvas.scale(scale, scale, width/2, MessageObject.defaultReactionItemHeight/2);
             }
-            canvas.drawRect(rect, paint);
+
+            // Background
+            Paint paint = new Paint();
+            paint.setColor(0x42214119);
+            float corners = AndroidUtilities.dpf2(16.3636f);
+            canvas.drawRoundRect(0f, 0f, (float)width, (float)MessageObject.defaultReactionItemHeight, corners, corners, paint);
+
+            // Image
+            multipleReactionsReceivers.get(i).setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", this, 0);
+            multipleReactionsReceivers.get(i).setAlpha(1);
+            multipleReactionsReceivers.get(i).setImageCoords(MessageObject.defaultReactionImageLeftPadding, MessageObject.defaultReactionItemImageTopPadding, MessageObject.defaultReactionImageSize, MessageObject.defaultReactionImageSize);
+            multipleReactionsReceivers.get(i).draw(canvas);
+
+            // Text
+            StaticLayout textLayout;
+            TextPaint textPaint = new TextPaint();
+            textPaint.setColor(0xffffffff);
+            textPaint.setTextSize(AndroidUtilities.dp(13));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                textLayout = StaticLayout.Builder.obtain(reactionText, 0, reactionText.length(), textPaint, width)
+                        .setBreakStrategy(StaticLayout.BREAK_STRATEGY_HIGH_QUALITY)
+                        .setHyphenationFrequency(StaticLayout.HYPHENATION_FREQUENCY_NONE)
+                        .setAlignment(Layout.Alignment.ALIGN_NORMAL)
+                        .build();
+            } else {
+                textLayout = new StaticLayout(reactionText, textPaint, width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+                MessageObject.TextLayoutBlock block = new MessageObject.TextLayoutBlock();
+            }
+            MessageObject.TextLayoutBlock block = new MessageObject.TextLayoutBlock();
+            block.textLayout = textLayout;
+            block.textYOffset = 0;
+            block.charactersOffset = 0;
+            block.charactersEnd = textLayout.getText().length();
+            block.height = MessageObject.defaultReactionItemHeight;
+//            delegate.getTextSelectionHelper().draw(currentMessageObject, block, canvas);
+            canvas.translate(MessageObject.defaultReactionImageLeftPadding + MessageObject.defaultReactionImageSize + MessageObject.defaultReactionItemInterImageAndTextSpacing, MessageObject.defaultReactionItemTextTopPadding);
+            block.textLayout.draw(canvas);
+
+
             canvas.restore();
         }
         canvas.restore();
@@ -14061,6 +14139,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         locationImageReceiver.setIgnoreImageSet(true);
         reactionsChosen.setIgnoreImageSet(true);
         reactionsNotChosen.setIgnoreImageSet(true);
+        for(int i = 0; i < multipleReactionsReceivers.size(); i++) {
+            multipleReactionsReceivers.get(i).setIgnoreImageSet(true);
+        }
 
         if (groupedMessages != null && groupedMessages.messages.size() != 1) {
             int h = 0;
@@ -14082,6 +14163,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         locationImageReceiver.setIgnoreImageSet(false);
         reactionsChosen.setIgnoreImageSet(false);
         reactionsNotChosen.setIgnoreImageSet(false);
+        for(int i = 0; i < multipleReactionsReceivers.size(); i++) {
+            multipleReactionsReceivers.get(i).setIgnoreImageSet(false);
+        }
         return totalHeight + keyboardHeight;
     }
 

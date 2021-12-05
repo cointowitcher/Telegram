@@ -36,9 +36,11 @@ public class FullEmojiView extends FrameLayout {
     FullEmojiViewDelegate delegate;
     ImageReceiver.ImageReceiverDelegate delegateImg;
     ImageReceiver.ImageReceiverDelegate delegateImg2;
+    boolean isReactions2;
 
-    public FullEmojiView(@NonNull Context context) {
+    public FullEmojiView(@NonNull Context context, boolean isReactions2) {
         super(context);
+        this.isReactions2 = isReactions2;
 
         createBgView();
         createImageView();
@@ -226,6 +228,9 @@ public class FullEmojiView extends FrameLayout {
 
         v3.addView(staticImageView);
         int v3Size = AndroidUtilities.dp(ChatMessageCell.reactionSmallImageSize);
+        if (isReactions2) {
+            v3Size = endLocation[0];
+        }
         int v3Left = (int)endX + v3Size;
         int v3Top = (int)endY + v3Size;
         v3.setLayoutParams(LayoutHelper.createFrameWithoutDp(v3Size, v3Size, Gravity.TOP | Gravity.LEFT, v3Left, v3Top, 0, 0));

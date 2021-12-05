@@ -206,7 +206,7 @@ public class MessageObject {
     public String personalNotChosenReaction = null;
 
     public boolean isUserOrEncrypted() {
-        return DialogObject.isUserDialog(messageOwner.dialog_id) || DialogObject.isEncryptedDialog(messageOwner.dialog_id);
+        return DialogObject.isUserDialog(messageOwner.dialog_id);
     }
 
     public void updateChosenReactions() {
@@ -4403,7 +4403,7 @@ public class MessageObject {
     }
 
     public boolean isReactions2() {
-        return !isUserOrEncrypted() && messageOwner.reactions != null && !messageOwner.reactions.results.isEmpty();
+        return !isUserOrEncrypted() && !DialogObject.isEncryptedDialog(messageOwner.dialog_id) && messageOwner.reactions != null && !messageOwner.reactions.results.isEmpty();
     }
 
     public ArrayList<Integer> reactionsWidths = new ArrayList<>();
@@ -4411,6 +4411,7 @@ public class MessageObject {
     public ArrayList<String> reactionsTexts = new ArrayList<>();
     public ArrayList<Integer> reactionsTranslationsX = new ArrayList<>();
     public ArrayList<Integer> reactionsTranslationsY = new ArrayList<>();
+    public ArrayList<TLRPC.TL_availableReaction> reactionsImage = new ArrayList<>();
     private int reactionsHeight = 0;
 
     public int getReactionsHeight() {
@@ -4418,10 +4419,13 @@ public class MessageObject {
     }
 
     public static int defaultReactionLinePaddingTop = AndroidUtilities.dp(5.4545f);
-    public static int defaultReactionLeftPadding = AndroidUtilities.dp(8);
+    public static int defaultReactionImageLeftPadding = AndroidUtilities.dp(8);
     public static int defaultReactionImageSize = AndroidUtilities.dp(21);
     public static int defaultReactionInterItemSpacing = AndroidUtilities.dp(6.1818f);
     public static int defaultReactionItemHeight = AndroidUtilities.dp(28.363636f);
+    public static int defaultReactionItemInterImageAndTextSpacing = AndroidUtilities.dp(4f);
+    public static float defaultReactionItemTextTopPadding = AndroidUtilities.dpf2(6.5f);
+    public static int defaultReactionItemImageTopPadding = AndroidUtilities.dp(3.2728f);
     public static int defaultReactionRightPadding = AndroidUtilities.dp(10);
 
     public String generateReactionsSnapshot() {
@@ -4441,6 +4445,7 @@ public class MessageObject {
         reactionsTexts.clear();
         reactionsTranslationsX.clear();
         reactionsTranslationsY.clear();
+        reactionsImage.clear();
         reactionsHeight = 0;
         if (messageOwner.reactions == null) { return; }
 
@@ -4456,7 +4461,9 @@ public class MessageObject {
         for(int i = 0; i < messageOwner.reactions.results.size(); i++) {
             TLRPC.TL_reactionCount reactionCount = messageOwner.reactions.results.get(i);
             String countStringRepr = String.valueOf(reactionCount.count);
-            int width = defaultReactionLeftPadding + defaultReactionImageSize + (int)textPaint.measureText(countStringRepr) + defaultReactionRightPadding;
+            int width = defaultReactionImageLeftPadding + defaultReactionImageSize + defaultReactionItemInterImageAndTextSpacing + (int)textPaint.measureText(countStringRepr) + defaultReactionRightPadding;
+            TLRPC.TL_availableReaction availableReaction = AccountInstance.getInstance(currentAccount).getReactionsManager().getAvailableReaction(reactionCount.reaction);
+            reactionsImage.add(availableReaction);
             if(width + lineWidth + defaultReactionInterItemSpacing > maxWidth) {
                 lineWidth = width + defaultReactionInterItemSpacing;
                 reactionsX = 0;

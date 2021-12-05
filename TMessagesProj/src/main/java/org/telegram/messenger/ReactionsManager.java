@@ -12,6 +12,7 @@ import org.telegram.ui.ChatActivity;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 
 public class ReactionsManager {
     private static volatile ReactionsManager[] Instance = new ReactionsManager[UserConfig.MAX_ACCOUNT_COUNT];
@@ -35,12 +36,14 @@ public class ReactionsManager {
     private int hash = -1;
 
     public ArrayList<TLRPC.TL_availableReaction> availableReactions;
+    public HashMap<String, TLRPC.TL_availableReaction> availableReactionHashMap;
 
     public ReactionsManager(int currentAccount) {
         super();
         this.currentAccount = currentAccount;
         this.accountInstance = AccountInstance.getInstance(currentAccount);
         this.availableReactions = new ArrayList<>();
+        this.availableReactionHashMap = new HashMap<>();
     }
 
     public void loadReactions() {
@@ -60,8 +63,16 @@ public class ReactionsManager {
                 TLRPC.TL_messages_availableReactions resp = (TLRPC.TL_messages_availableReactions)response;
                 this.hash = resp.hash;
                 availableReactions = resp.reactions;
+                for(int i = 0; i < resp.reactions.size(); i++) {
+                    TLRPC.TL_availableReaction availableReactions = resp.reactions.get(i);
+                    availableReactionHashMap.put(availableReactions.reaction, availableReactions);
+                }
             }
         });
+    }
+
+    public TLRPC.TL_availableReaction getAvailableReaction(String reaction) {
+        return availableReactionHashMap.get(reaction);
     }
 
     public void sendReaction(MessageObject messageObject, String reaction, ChatActivity parent, SendReactionResponse response) {
@@ -83,12 +94,7 @@ public class ReactionsManager {
 
     // MARK: - Helper
     public TLRPC.TL_availableReaction getAvailableReactionFor(String reaction) {
-        for(int i = 0; i < availableReactions.size(); i++) {
-            if (availableReactions.get(i).reaction.equals(reaction)) {
-                return availableReactions.get(i);
-            }
-        }
-        return null;
+        return getAvailableReaction(reaction);
     }
 
     public void locallyUpdateMessageReactions(long dialogId, int msgId, TLRPC.TL_messageReactions reactions) {

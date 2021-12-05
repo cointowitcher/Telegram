@@ -20454,8 +20454,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (cell == null) {
             return;
         }
+        boolean isReactions2 = cell.getMessageObject().isReactions2();
         float statusBarHeight = (Build.VERSION.SDK_INT >= 21 && !inBubbleMode ? AndroidUtilities.statusBarHeight : 0);
-        fullEmojiView = new FullEmojiView(contentView.getContext());
+        fullEmojiView = new FullEmojiView(contentView.getContext(), isReactions2);
         fullEmojiView.configure((EmojisScrollComponent.EmojisCell) emojiView, emojisScroll, statusBarHeight);
         fullEmojiPopupWindow = new ActionBarPopupWindow(fullEmojiView, getParentActivity().getWindow().getDecorView().getWidth(), getParentActivity().getWindow().getDecorView().getHeight());
         FrameLayout.LayoutParams layoutParams = LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT);
@@ -20477,7 +20478,12 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
             @Override
             public void finishedAppearing() {
-                int[] coords = cell.getLocationInformationOfChosenReaction();
+                int[] coords;
+                if (!isReactions2) {
+                    coords = cell.getLocationInformationOfChosenReaction();
+                } else {
+                    coords = cell.getLocationInformationOfMultipleReaction(reaction);
+                }
                 fullEmojiView.disappear(coords);
             }
             @Override
