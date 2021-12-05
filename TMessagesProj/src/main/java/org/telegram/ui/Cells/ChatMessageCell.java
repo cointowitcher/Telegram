@@ -144,6 +144,7 @@ import org.telegram.ui.Components.VideoForwardDrawable;
 import org.telegram.ui.PhotoViewer;
 import org.telegram.ui.PinchToZoomHelper;
 import org.telegram.ui.SecretMediaViewer;
+import org.telegram.ui.SwiftRect;
 
 import java.io.File;
 import java.lang.ref.WeakReference;
@@ -218,6 +219,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
 
         default void didPressReaction(ChatMessageCell cell, TLRPC.TL_reactionCount reaction) {
+        }
+
+        default void didPressMultReactions(ChatMessageCell cell, String reaction) {
+
         }
 
         default void didPressVoteButtons(ChatMessageCell cell, ArrayList<TLRPC.TL_pollAnswer> buttons, int showCount, int x, int y) {
@@ -603,6 +608,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private String botButtonsLayout;
     private int widthForButtons;
     private int pressedBotButton;
+    private String reactionsMultiplePressed;
 
     private MessageObject currentMessageObject;
     private MessageObject messageObjectToSet;
@@ -705,6 +711,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private String lastPersonalNotChosenReaction;
     private float reactionsChosenX;
     private float reactionsChosenY;
+    public String reactionAlphaZero;
 
     private int getReactionsAdditionalWidth(MessageObject messageObject) {
         int[] loc = new int[2];
@@ -919,6 +926,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         reactionsNotChosen = new ImageReceiver(this);
         multipleReactionsReceivers = new ArrayList<>();
         reactionsLocations = new HashMap<>();
+        multPaintBackground = new Paint();
+        multPaintOutline = new Paint();
+        multTextPaint = new TextPaint();
 
         TAG = DownloadController.getInstance(currentAccount).generateObserverTag();
 
@@ -2149,6 +2159,37 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return result;
     }
 
+    private boolean checkMultReactionsMotionEvent(MotionEvent event) {
+        if (!currentMessageObject.isReactions2() || !currentMessageObject.hasReactions()) { return false; }
+
+        int x = (int) event.getX();
+        int y = (int) event.getY();
+
+        boolean result = false;
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            int addXY = AndroidUtilities.dp(1);
+            for (String key: reactionsLocations.keySet()) {
+                SwiftRect coords = reactionsLocations.get(key);
+                if (x >= coords.x - addXY && x <= coords.getRight() + addXY && y >= coords.y - addXY && y <= coords.getBottom() + addXY) {
+                    reactionsMultiplePressed = key;
+                    invalidate();
+                    result = true;
+                    break;
+                }
+            }
+        } else {
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (reactionsMultiplePressed != null) {
+                    playSoundEffect(SoundEffectConstants.CLICK);
+                    delegate.didPressMultReactions(this, reactionsMultiplePressed);
+                    reactionsMultiplePressed = null;
+                    invalidate();
+                }
+            }
+        }
+        return result;
+    }
+
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         if (currentMessageObject == null || !delegate.canPerformActions() || animationRunning) {
@@ -2184,6 +2225,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
         if (!result) {
             result = checkChosenReactionMotionEvent(event);
+        }
+        if (!result) {
+            result = checkMultReactionsMotionEvent(event);
         }
         if (!result) {
             result = checkDateMotionEvent(event);
@@ -2236,6 +2280,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             timePressed = false;
             gamePreviewPressed = false;
             reactionsChosenPressed = false;
+            reactionsMultiplePressed = null;
             instantPressed = instantButtonPressed = commentButtonPressed = false;
             if (Build.VERSION.SDK_INT >= 21) {
                 for (int a = 0; a < selectorDrawable.length; a++) {
@@ -3395,6 +3440,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             additionalTimeOffsetY = 0;
             miniButtonPressed = 0;
             pressedBotButton = -1;
+            reactionsMultiplePressed = null;
             reactionsChosenPressed = false;
             pressedVoteButton = -1;
             pollHintPressed = false;
@@ -6391,7 +6437,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return true;
         }
         resetPressedLink(-1);
-        if (buttonPressed != 0 || miniButtonPressed != 0 || videoButtonPressed != 0 || pressedBotButton != -1 || reactionsChosenPressed) {
+        if (buttonPressed != 0 || miniButtonPressed != 0 || videoButtonPressed != 0 || pressedBotButton != -1 || reactionsChosenPressed || reactionsMultiplePressed != null) {
             buttonPressed = 0;
             miniButtonPressed = 0;
             videoButtonPressed = 0;
@@ -8427,20 +8473,23 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     public int[] getLocationInformationOfMultipleReaction(String reaction) { // Output: (w,h,x,y)
-        Pair<Integer, Integer> pair = reactionsLocations.get(reaction);
-        if (pair == null) { return null; }
+        SwiftRect rect = reactionsLocations.get(reaction);
+        if (rect == null) { return null; }
         int[] loc = new int[2];
         getLocationInWindow(loc);
 
         int[] args = new int[4];
         args[0] = MessageObject.defaultReactionImageSize;
         args[1] = MessageObject.defaultReactionImageSize;
-        args[2] = loc[0] + pair.first + MessageObject.defaultReactionImageLeftPadding;
-        args[3] = loc[1] + pair.second + MessageObject.defaultReactionItemImageTopPadding;
+        args[2] = loc[0] + (int)rect.x + MessageObject.defaultReactionImageLeftPadding;
+        args[3] = loc[1] + (int)rect.y + MessageObject.defaultReactionItemImageTopPadding;
         return args;
     }
 
-    private HashMap<String, Pair<Integer, Integer>> reactionsLocations;
+    private HashMap<String, SwiftRect> reactionsLocations; // Rect like in iOS
+    private Paint multPaintBackground;
+    private Paint multPaintOutline;
+    private TextPaint multTextPaint;
 
     private void drawMultReactions(Canvas canvas) {
         if (!currentMessageObject.isReactions2()) { return; }
@@ -8449,7 +8498,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             int change = Math.abs(currentMessageObject.messageOwner.reactions.results.size() - multipleReactionsReceivers.size());
             for(int i = 0; i < change; i++) {
                 if (shouldAdd) {
-                    multipleReactionsReceivers.add(new ImageReceiver());
+                    ImageReceiver receiver = new ImageReceiver(this);
+                    multipleReactionsReceivers.add(receiver);
                 } else {
                     multipleReactionsReceivers.remove(multipleReactionsReceivers.size() - 1);
                 }
@@ -8468,10 +8518,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             int width = currentMessageObject.reactionsWidths.get(i);
             int translationX = currentMessageObject.reactionsTranslationsX.get(i);
             int translationY = currentMessageObject.reactionsTranslationsY.get(i);
+            boolean isSelected = currentMessageObject.messageOwner.reactions.results.get(i).chosen;
             String reactionText = currentMessageObject.reactionsTexts.get(i);
             canvas.save();
             canvas.translate(translationX, translationY);
-            reactionsLocations.put(availableReaction.reaction, new Pair<>(backgroundDrawableLeft + translationX, top + translationY));
+            reactionsLocations.put(availableReaction.reaction, new SwiftRect(backgroundDrawableLeft + translationX, top + translationY, width, MessageObject.defaultReactionItemHeight));
             // Scale
             if (transitionParams.addedCount >= length - i) {
                 float scaleBasedOnItem = transitionParams.reactionsTransitionAlpha - 0.25f * (transitionParams.addedCount - (length + 1 - i));
@@ -8480,30 +8531,38 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
 
             // Background
-            Paint paint = new Paint();
-            paint.setColor(0x42214119);
+            multPaintBackground.setColor(0x42214119);
+            multPaintBackground.setStyle(Paint.Style.FILL);
             float corners = AndroidUtilities.dpf2(16.3636f);
-            canvas.drawRoundRect(0f, 0f, (float)width, (float)MessageObject.defaultReactionItemHeight, corners, corners, paint);
+            canvas.drawRoundRect(0f, 0f, (float)width, (float)MessageObject.defaultReactionItemHeight, corners, corners, multPaintBackground);
+
+            // Background outline
+            if (isSelected) {
+                multPaintOutline.setColor(0xffffffff);
+                multPaintOutline.setStyle(Paint.Style.STROKE);
+                multPaintOutline.setStrokeWidth(1.4545f);
+                canvas.drawRoundRect(0f, 0f, (float)width, (float)MessageObject.defaultReactionItemHeight, corners, corners, multPaintOutline);
+            }
 
             // Image
-            multipleReactionsReceivers.get(i).setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", this, 0);
-            multipleReactionsReceivers.get(i).setAlpha(1);
+            multipleReactionsReceivers.get(i).setImage(ImageLocation.getForDocument(availableReaction.static_icon), null, null, "webp", this, 1);
+            multipleReactionsReceivers.get(i).setAlpha(reactionAlphaZero == availableReaction.reaction ? 0 : 1);
             multipleReactionsReceivers.get(i).setImageCoords(MessageObject.defaultReactionImageLeftPadding, MessageObject.defaultReactionItemImageTopPadding, MessageObject.defaultReactionImageSize, MessageObject.defaultReactionImageSize);
             multipleReactionsReceivers.get(i).draw(canvas);
 
             // Text
             StaticLayout textLayout;
-            TextPaint textPaint = new TextPaint();
-            textPaint.setColor(0xffffffff);
-            textPaint.setTextSize(AndroidUtilities.dp(13));
+            multTextPaint = new TextPaint();
+            multTextPaint.setColor(0xffffffff);
+            multTextPaint.setTextSize(AndroidUtilities.dp(13));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                textLayout = StaticLayout.Builder.obtain(reactionText, 0, reactionText.length(), textPaint, width)
+                textLayout = StaticLayout.Builder.obtain(reactionText, 0, reactionText.length(), multTextPaint, width)
                         .setBreakStrategy(StaticLayout.BREAK_STRATEGY_HIGH_QUALITY)
                         .setHyphenationFrequency(StaticLayout.HYPHENATION_FREQUENCY_NONE)
                         .setAlignment(Layout.Alignment.ALIGN_NORMAL)
                         .build();
             } else {
-                textLayout = new StaticLayout(reactionText, textPaint, width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
+                textLayout = new StaticLayout(reactionText, multTextPaint, width, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
                 MessageObject.TextLayoutBlock block = new MessageObject.TextLayoutBlock();
             }
             MessageObject.TextLayoutBlock block = new MessageObject.TextLayoutBlock();

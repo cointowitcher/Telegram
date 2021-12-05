@@ -14,6 +14,7 @@ import androidx.annotation.NonNull;
 
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DocumentObject;
+import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.SvgHelper;
@@ -21,6 +22,7 @@ import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
 import org.telegram.ui.Cells.ChatMessageCell;
 import org.telegram.ui.CustomAnimatorListener;
+import org.telegram.ui.SwiftRect;
 
 import java.lang.ref.WeakReference;
 
@@ -40,6 +42,7 @@ public class FullEmojiView extends FrameLayout {
 
     public FullEmojiView(@NonNull Context context, boolean isReactions2) {
         super(context);
+        ImageLoader.getInstance().clearMemory();
         this.isReactions2 = isReactions2;
 
         createBgView();
@@ -146,7 +149,9 @@ public class FullEmojiView extends FrameLayout {
         fullEmojiView.imageView.imageReceiver.startLottie();
         fullEmojiView.animatorSet.start();
         fullEmojiView.effectsImageView.imageReceiver.startLottie();
-        fullEmojiView.emojiView.imageView.setAlpha(0);
+        if (fullEmojiView.emojiView != null) {
+            fullEmojiView.emojiView.imageView.setAlpha(0);
+        }
         AndroidUtilities.runOnUIThread(() -> {
             fullEmojiView.delegate.finishedAppearing();
         }, fullEmojiView.imageView.imageReceiver.getLottieAnimation().getDuration());
@@ -170,18 +175,30 @@ public class FullEmojiView extends FrameLayout {
     TLRPC.Document staticIcon;
 
     public void configure(EmojisScrollComponent.EmojisCell emojiView, FrameLayout emojiScroll, float statusBarHeight) {
-        this.staticIcon = emojiView.reaction.static_icon;
-
-        int[] loc = new int[2];
+        int[] loc1 = new int[2];
         this.emojiView = emojiView;
-        emojiView.getLocationOnScreen(loc);
+        emojiView.getLocationOnScreen(loc1);
+
+
+        int[] startRect = new int[4];
+        startRect[0] = emojiView.getWidth();
+        startRect[1] = emojiView.getHeight();
+        startRect[2] = loc1[0];
+        startRect[3] = (int)(loc1[1] - statusBarHeight);
+
+        configure(emojiView.reaction, startRect, statusBarHeight);
+    }
+
+    public void configure(TLRPC.TL_availableReaction availableReaction, int[] startRect, float statusBarHeight) {
+        this.staticIcon = availableReaction.static_icon;
+
         this.statusBarHeight = statusBarHeight;
 
         v.addView(imageView);
-        startWidth = emojiView.getWidth() * 1.02f;
-        startHeight = emojiView.getHeight() * 1.02f;
-        startX = loc[0];
-        startY = (int)(loc[1] - statusBarHeight);
+        startWidth = startRect[0] * 1.02f;
+        startHeight = startRect[1] * 1.02f;
+        startX = startRect[2];
+        startY = (int)(startRect[3] - statusBarHeight);
         v.setLayoutParams(LayoutHelper.createFrameWithoutDp((int)(startWidth), (int)(startHeight), Gravity.LEFT | Gravity.TOP, startX, startY, 0, 0));
 
         endSize = 0.48f * AndroidUtilities.getRealScreenSize().x;
@@ -205,11 +222,11 @@ public class FullEmojiView extends FrameLayout {
                 ObjectAnimator.ofFloat(v, View.SCALE_Y, endScale),
                 ObjectAnimator.ofFloat(v, View.TRANSLATION_X, translationX),
                 ObjectAnimator.ofFloat(v, View.TRANSLATION_Y, translationY)
-                );
+        );
         animatorSet.setDuration(300);
 
-        effectsImageView.setImage(ImageLocation.getForDocument(emojiView.reaction.effect_animation), null, "webp", null, this);
-        imageView.setImage(ImageLocation.getForDocument(emojiView.reaction.activate_animation), null, "webp", null, this);
+        effectsImageView.setImage(ImageLocation.getForDocument(availableReaction.effect_animation), null, "webp", null, this);
+        imageView.setImage(ImageLocation.getForDocument(availableReaction.activate_animation), null, "webp", null, this);
         WeakReference weakReference1 = new WeakReference(this);
         AndroidUtilities.runOnUIThread(() -> {
             FullEmojiView fullEmojiView = (FullEmojiView) weakReference1.get();
@@ -242,14 +259,19 @@ public class FullEmojiView extends FrameLayout {
 
         endLocation[3] -= (int)statusBarHeight;
         this.endLocation = endLocation;
-
-        float translationX = endLocation[2] - startX - endLocation[0];
-        float translationY = endLocation[3] - startY - endLocation[1];
+        float translationX, translationY;
+        if (isReactions2) {
+            translationX = endLocation[2] - startX;
+            translationY = endLocation[3] - startY;
+        } else {
+            translationX = endLocation[2] - startX - endLocation[0];
+            translationY = endLocation[3] - startY - endLocation[1];
+        }
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.setInterpolator(CubicBezierInterpolator.EASE_OUT);
         animatorSet.setDuration(300);
-
-        float endScale = (endLocation[0] * 1.5f) / startWidth;
+        float endScale;
+        endScale = (endLocation[0] * 1.5f) / startWidth;
         animatorSet.playTogether(
                 ObjectAnimator.ofFloat(v, View.TRANSLATION_X, translationX),
                 ObjectAnimator.ofFloat(v, View.TRANSLATION_Y, translationY),
@@ -278,6 +300,29 @@ public class FullEmojiView extends FrameLayout {
                 FullEmojiView fullEmojiView = (FullEmojiView) weakReference1.get();
                 if(fullEmojiView == null) { return; }
                 fullEmojiView.v3.setAlpha(1);
+                if (fullEmojiView.delegate != null) {
+                    fullEmojiView.delegate.shouldDisappear();
+                }
+            }
+        });
+    }
+
+    public void disappearSimple() { // Should be called if cannot disappear normally
+        AnimatorSet animatorSet = new AnimatorSet();
+        animatorSet.setInterpolator(CubicBezierInterpolator.EASE_OUT);
+        animatorSet.setDuration(300);
+
+        animatorSet.playTogether(
+                ObjectAnimator.ofFloat(v, View.SCALE_X, 0),
+                ObjectAnimator.ofFloat(v, View.SCALE_Y, 0)
+        );
+        animatorSet.start();
+        WeakReference weakReference1 = new WeakReference(this);
+        animatorSet.addListener(new CustomAnimatorListener() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                FullEmojiView fullEmojiView = (FullEmojiView) weakReference1.get();
+                if(fullEmojiView == null) { return; }
                 if (fullEmojiView.delegate != null) {
                     fullEmojiView.delegate.shouldDisappear();
                 }
