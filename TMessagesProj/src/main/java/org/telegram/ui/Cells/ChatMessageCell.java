@@ -71,6 +71,8 @@ import android.widget.Toast;
 
 import androidx.core.graphics.ColorUtils;
 
+import com.google.android.exoplayer2.util.Log;
+
 import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
@@ -8415,13 +8417,13 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     private void drawMultReactions(Canvas canvas) {
         if (!currentMessageObject.isReactions2()) { return; }
-        int previousReactionsHeight = currentMessageObject.getReactionsHeight();
 //        currentMessageObject.generateReactionsLayout(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
         canvas.save();
         int top = (int)(layoutHeight - AndroidUtilities.dp(2) + transitionParams.deltaBottom);
         canvas.translate(backgroundDrawableLeft, top);
         int currentLine = 0;
-        for(int i = 0; i < currentMessageObject.messageOwner.reactions.results.size(); i++) {
+        int length = currentMessageObject.messageOwner.reactions.results.size();
+        for(int i = 0; i < length; i++) {
             int width = currentMessageObject.reactionsWidths.get(i);
             int translationX = currentMessageObject.reactionsTranslationsX.get(i);
             int translationY = currentMessageObject.reactionsTranslationsY.get(i);
@@ -8431,23 +8433,15 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             Rect rect = new Rect(0, 0, width, MessageObject.defaultReactionItemHeight);
             Paint paint = new Paint();
             paint.setColor(0x99784391);
+            if (transitionParams.addedCount >= length - i) {
+                float scaleBasedOnItem = transitionParams.reactionsTransitionAlpha - 0.25f * (transitionParams.addedCount - (length + 1 - i));
+                float scale = Math.min(1f, Math.max(0f, scaleBasedOnItem));
+                canvas.scale(scale, scale, width/2, MessageObject.defaultReactionItemHeight/2);
+            }
             canvas.drawRect(rect, paint);
-
-            MessageObject.TextLayoutBlock textLayoutBlock = new MessageObject.TextLayoutBlock();
-
-            TextView textView = new TextView(getContext());
-            textView.setTextColor(Color.RED);
-            textView.setText("NUIFGEWN");
-            textView.onPreDraw();
-            textView.draw(canvas);
             canvas.restore();
         }
         canvas.restore();
-        if (previousReactionsHeight != currentMessageObject.getReactionsHeight()) {
-//            currentMessageObject.forceUpdate = true;
-//            setMessageObject(getMessageObject(), getCurrentMessagesGroup(), topNearToSet, bottomNearToSet);
-//            substractBackgroundHeight = keyboardHeight = getMessageObject().getReactionsHeight();
-        }
     }
 
     private void drawBotButtons(Canvas canvas, ArrayList<BotButton> botButtons, float alpha) {
@@ -14984,6 +14978,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         float lastForwardNameX;
         int animateForwardNameWidth;
         int lastForwardNameWidth;
+        public int lastReactionsHeight;
+        public int lastReactionsCount;
+        public int addedCount;
+        public float reactionsTransitionAlpha = 100f;
 
         public void recordDrawingState() {
             wasDraw = true;
@@ -15052,6 +15050,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             lastForwardNameX = forwardNameX;
             lastForwardedNamesOffset = namesOffset;
             lastForwardNameWidth = forwardedNameWidth;
+            lastReactionsHeight = getMessageObject().getReactionsHeight();
+            lastReactionsCount = getMessageObject().reactionsTexts.size();
         }
 
         public void recordDrawingStatePreview() {
@@ -15303,6 +15303,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             animateForwardedLayout = false;
             animatingForwardedNameLayout[0] = null;
             animatingForwardedNameLayout[1] = null;
+            reactionsTransitionAlpha = 100f;
         }
 
         public boolean supportChangeAnimation() {

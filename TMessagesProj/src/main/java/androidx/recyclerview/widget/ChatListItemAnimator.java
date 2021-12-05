@@ -6,6 +6,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.os.Build;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewPropertyAnimator;
 import android.view.animation.Interpolator;
@@ -495,6 +496,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
 
                 if (group == null && params.wasDraw) {
                     boolean isOut = chatMessageCell.getMessageObject().isOutOwner();
+                    boolean didUpdateRecycler = false;
                     if ((isOut && params.lastDrawingBackgroundRect.left != chatMessageCell.getBackgroundDrawableLeft()) ||
                             (!isOut && params.lastDrawingBackgroundRect.right != chatMessageCell.getBackgroundDrawableRight()) ||
                             params.lastDrawingBackgroundRect.top != chatMessageCell.getBackgroundDrawableTop() ||
@@ -516,6 +518,29 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
 
                         recyclerListView.setClipChildren(false);
                         recyclerListView.invalidate();
+                        didUpdateRecycler = true;
+                    } else if(params.lastReactionsHeight != chatMessageCell.getMessageObject().getReactionsHeight()) {
+                        //moveInfo.deltaBottom = chatMessageCell.getMessageObject().getReactionsHeight() + params.lastReactionsHeight;
+                        moveInfo.deltaBottom = 0;
+                        moveInfo.animateChangeInternal = true;
+                        params.animateBackgroundBoundsInner = false;
+//                        params.deltaLeft = -moveInfo.deltaLeft;
+//                        params.deltaRight = -moveInfo.deltaRight;
+//                        params.deltaTop = -moveInfo.deltaTop;
+//                        params.deltaBottom = -moveInfo.deltaBottom;
+
+                        recyclerListView.setClipChildren(false);
+                        recyclerListView.invalidate();
+                        didUpdateRecycler = true;
+                    }
+                    moveInfo.animateReactionsAddedCount = chatMessageCell.getMessageObject().reactionsWidths.size() - params.lastReactionsCount;
+                    if (moveInfo.animateReactionsAddedCount != 0) {
+                        params.addedCount = moveInfo.animateReactionsAddedCount;
+                        params.reactionsTransitionAlpha = 0f;
+                        if (!didUpdateRecycler) {
+                            recyclerListView.setClipChildren(false);
+                            recyclerListView.invalidate();
+                        }
                     }
                 }
             }
@@ -636,7 +661,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
                 chatMessageCell.getTransitionParams().animateChangeProgress = 0f;
             }
 
-            if (deltaX == 0 && deltaY == 0 && !moveInfo.animateImage && !moveInfo.animateRemoveGroup && !moveInfo.animateChangeGroupBackground && !moveInfo.animatePinnedBottom && !moveInfo.animateBackgroundOnly && !moveInfo.animateChangeInternal) {
+            if (deltaX == 0 && deltaY == 0 && !moveInfo.animateImage && !moveInfo.animateRemoveGroup && !moveInfo.animateChangeGroupBackground && !moveInfo.animatePinnedBottom && !moveInfo.animateBackgroundOnly && !moveInfo.animateChangeInternal && moveInfo.animateReactionsAddedCount == 0) {
                 dispatchMoveFinished(holder);
                 return false;
             }
@@ -829,6 +854,19 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
                 valueAnimator.addUpdateListener(animation -> {
                     params.animateChangeProgress = (float) animation.getAnimatedValue();
                     chatMessageCell.invalidate();
+                });
+                animatorSet.playTogether(valueAnimator);
+            }
+
+            if (moveInfoExtended.animateReactionsAddedCount != 0) {
+                Log.d("sergey", "moveInfoExtended.animateReactionsAddedSize");
+                ValueAnimator valueAnimator = ValueAnimator.ofFloat(0, 1f + 0.25f * (moveInfoExtended.animateReactionsAddedCount - 1));
+                params.animateChange = true;
+                params.addedCount = moveInfoExtended.animateReactionsAddedCount;
+                params.reactionsTransitionAlpha = 0;
+                valueAnimator.setDuration(3000);
+                valueAnimator.addUpdateListener(animation -> {
+                    params.reactionsTransitionAlpha = (float) animation.getAnimatedValue();
                 });
                 animatorSet.playTogether(valueAnimator);
             }
@@ -1502,6 +1540,8 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
 
         int deltaLeft, deltaRight, deltaTop, deltaBottom;
         boolean animateRemoveGroup;
+
+        int animateReactionsAddedCount;
 
         MoveInfoExtended(RecyclerView.ViewHolder holder, int fromX, int fromY, int toX, int toY) {
             super(holder, fromX, fromY, toX, toY);
