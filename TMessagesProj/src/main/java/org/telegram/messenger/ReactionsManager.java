@@ -75,6 +75,15 @@ public class ReactionsManager {
         return availableReactionHashMap.get(reaction);
     }
 
+    public void forbidReactionsForTest(long chatId, ArrayList<String> availableReactions) {
+        TLRPC.TL_messages_setChatAvailableReactions req = new TLRPC.TL_messages_setChatAvailableReactions();
+        req.peer = getMessagesController().getInputPeer(chatId);
+        req.available_reactions = availableReactions;
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            Log.d("sergeyx", String.format("forbidReactionsForTest response %s error %s", response, error));
+        });
+    }
+
     public void removeReaction(MessageObject messageObject, String reaction, ChatActivity parent, SendReactionResponse response) {
         getSendMessagesHelper().removeReaction(messageObject, reaction, parent, (pair) -> {
             Pair<TLObject, TLRPC.TL_error> obj = (Pair<TLObject, TLRPC.TL_error>) pair;

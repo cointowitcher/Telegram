@@ -8510,6 +8510,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         int currentLine = 0;
         int length = currentMessageObject.reactionsImage.size();
         for(int i = 0; i < length; i++) {
+            if (i >= currentMessageObject.messageOwner.reactions.results.size()) {
+                return;
+            }
             TLRPC.TL_availableReaction availableReaction = currentMessageObject.reactionsImage.get(i);
             if (availableReaction == null) { continue; }
             int width = currentMessageObject.reactionsWidths.get(i);

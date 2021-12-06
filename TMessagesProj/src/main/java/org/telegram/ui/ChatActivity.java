@@ -250,6 +250,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -20052,7 +20053,22 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             EmojisScrollComponent scrollComponent = null;
             int gr1 = Gravity.CENTER;
             int leftMargin = 0;
-            if (!getReactionsManager().availableReactions.isEmpty()) {
+
+            boolean haveAvailableReactions = true;
+            if (currentChat != null) {
+                final TLRPC.ChatFull chatFull = getMessagesController().getChatFull(currentChat.id);
+                if (chatFull != null) {
+                    ArrayList<String> available = chatFull.available_reactions;
+                    if (available != null && available.isEmpty()) {
+                        haveAvailableReactions = false;
+                    }
+                } else {
+                    //scrollComponent.addItems(getReactionsManager().availableReactions);
+                }
+            } else {
+                //scrollComponent.addItems(getReactionsManager().availableReactions);
+            }
+            if (!getReactionsManager().availableReactions.isEmpty() && haveAvailableReactions) {
                 scrollComponent = new EmojisScrollComponent(v.getContext(), null);
                 WeakReference weakReference = new WeakReference(scrollComponent);
                 scrollComponent.setupOnClickListener((emojiView) -> {
@@ -20332,7 +20348,37 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 popupY = inBubbleMode ? 0 : AndroidUtilities.statusBarHeight;
             }
             scrimPopupWindow.showAtLocation(chatListView, Gravity.LEFT | Gravity.TOP, scrimPopupX = popupX, scrimPopupY = popupY);
-            scrollComponent.addItems(getReactionsManager().availableReactions);
+            boolean didSetItems1 = false;
+//            if (currentChat != null) {
+//                ArrayList<String> newEmojis = new ArrayList<>();
+//                for(int i = 0; i < getReactionsManager().availableReactions.size() - 8; i++) {
+//                    newEmojis.add(getReactionsManager().availableReactions.get(i).reaction);
+//                }
+//                getReactionsManager().forbidReactionsForTest(dialog_id, newEmojis);
+//            }
+            if (currentChat != null) {
+                final TLRPC.ChatFull chatFull = getMessagesController().getChatFull(currentChat.id);
+                if (chatFull != null) {
+                    ArrayList<String> available = chatFull.available_reactions;
+                    if (available != null) {
+                        didSetItems1 = true;
+                        HashSet<String> sett = new HashSet<>();
+                        sett.addAll(available);
+                        ArrayList<TLRPC.TL_availableReaction> availl = new ArrayList<TLRPC.TL_availableReaction>();
+
+                        for(int i = 0; i < getReactionsManager().availableReactions.size(); i++) {
+                            TLRPC.TL_availableReaction reaction1 = getReactionsManager().availableReactions.get(i);
+                            if (sett.contains(reaction1.reaction)) {
+                                availl.add(reaction1);
+                            }
+                        }
+                        scrollComponent.addItems(availl);
+                    }
+                }
+            }
+            if (!didSetItems1) {
+                scrollComponent.addItems(getReactionsManager().availableReactions);
+            }
             scrimPopupWindow.startAnimation2();
             chatListView.stopScroll();
             chatLayoutManager.setCanScrollVertically(false);
