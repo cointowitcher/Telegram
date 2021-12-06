@@ -78,6 +78,7 @@ public class EmojisScrollComponent extends FrameLayout {
         handler = new Handler();
         this.callback = (v) -> {};
         setup();
+        ImageLoader.getInstance().clearMemory();
     }
 
     @Override
@@ -331,8 +332,14 @@ public class EmojisScrollComponent extends FrameLayout {
                     didSetImage = true;
                     tryPlay();
                 }
+
+                @Override
+                public void didSetMediaKey(String key) {
+//                    ImageLoader.getInstance().clearLottie(key);
+                }
             });
-            imageView.setImage(ImageLocation.getForDocument(reaction.select_animation), "66_66", null, svgThumb, this);
+            ImageLocation location = ImageLocation.getForDocument(reaction.select_animation);
+            imageView.setImage(location, "66_66", null, svgThumb, this);
         }
 
         void tryPlay() {
@@ -344,7 +351,6 @@ public class EmojisScrollComponent extends FrameLayout {
             if (imageView == null || imageView.imageReceiver == null || imageView.imageReceiver.getLottieAnimation() == null) {
                 return;
             }
-            imageView.imageReceiver.resetLottie();
             imageView.imageReceiver.startLottie();
         }
     }

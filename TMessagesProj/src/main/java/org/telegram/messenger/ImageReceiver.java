@@ -45,6 +45,10 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
 
         default void onAnimationReady(ImageReceiver imageReceiver) {
         }
+
+        default void didSetMediaKey(String key) {
+
+        }
     }
 
     public static class BitmapHolder {
@@ -464,7 +468,9 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
         if (mediaKey != null && mediaFilter != null) {
             mediaKey += "@" + mediaFilter;
         }
-
+        if (delegate != null) {
+            delegate.didSetMediaKey(mediaKey);
+        }
         if (mediaKey == null && currentImageKey != null && currentImageKey.equals(imageKey) || currentMediaKey != null && currentMediaKey.equals(mediaKey)) {
             if (delegate != null) {
                 delegate.didSetImage(this, currentImageDrawable != null || currentThumbDrawable != null || staticThumbDrawable != null || currentMediaDrawable != null, currentImageDrawable == null && currentMediaDrawable == null, false);

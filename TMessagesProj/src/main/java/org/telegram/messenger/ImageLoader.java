@@ -2228,6 +2228,11 @@ public class ImageLoader {
             return getFromMemCache(key) != null;
         }
     }
+    public void clearLottie(String key) {
+        lottieMemCache.remove(key);
+        smallImagesMemCache.remove(key);
+        memCache.remove(key);
+    }
 
     public void clearMemory() {
         smallImagesMemCache.evictAll();
