@@ -76,12 +76,12 @@ public class ReactionsManager {
     }
 
     public void forbidReactionsForTest(long chatId, ArrayList<String> availableReactions) {
-        TLRPC.TL_messages_setChatAvailableReactions req = new TLRPC.TL_messages_setChatAvailableReactions();
-        req.peer = getMessagesController().getInputPeer(chatId);
-        req.available_reactions = availableReactions;
-        getConnectionsManager().sendRequest(req, (response, error) -> {
-            Log.d("sergeyx", String.format("forbidReactionsForTest response %s error %s", response, error));
-        });
+//        TLRPC.TL_messages_setChatAvailableReactions req = new TLRPC.TL_messages_setChatAvailableReactions();
+//        req.peer = getMessagesController().getInputPeer(chatId);
+//        req.available_reactions = availableReactions;
+//        getConnectionsManager().sendRequest(req, (response, error) -> {
+//            Log.d("sergeyx", String.format("forbidReactionsForTest response %s error %s", response, error));
+//        });
     }
 
     public void removeReaction(MessageObject messageObject, String reaction, ChatActivity parent, SendReactionResponse response) {

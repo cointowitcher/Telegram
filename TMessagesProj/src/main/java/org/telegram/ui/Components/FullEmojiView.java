@@ -267,7 +267,7 @@ public class FullEmojiView extends FrameLayout {
         this.endLocation = endLocation;
         float translationX, translationY;
         if (isReactions2) {
-            Log.d("sergey", "x981 isReactions2");
+//            Log.d("sergey", "x981 isReactions2");
             if (isInitiatedFromEmojiView) { // I don't know why
                 translationX = endLocation[2] - startX - (endLocation[0] / 2) * 1.1f;
                 translationY = endLocation[3] - startY - (endLocation[1] / 2) * 1.1f;

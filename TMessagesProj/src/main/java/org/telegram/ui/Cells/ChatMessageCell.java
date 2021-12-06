@@ -8539,7 +8539,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
             // Background outline
             if (isChosen) {
-                Log.d("sergey", String.format("changeChosenReactionsChosenAlpha %s prev %s cur %s", transitionParams.changeReactionsChosenAlpha, transitionParams.previousReactionsChosenReaction, availableReaction.reaction));
+//                Log.d("sergey", String.format("changeChosenReactionsChosenAlpha %s prev %s cur %s", transitionParams.changeReactionsChosenAlpha, transitionParams.previousReactionsChosenReaction, availableReaction.reaction));
                 if (transitionParams.animateChangeReactionsChosenAlpha && !isPreviousChosen) {
                     multPaintOutline.setAlpha((int) ((transitionParams.changeReactionsChosenAlpha) * 255));
                 } else {

@@ -143,7 +143,7 @@ public class EmojisScrollComponent extends FrameLayout {
         onScrollChangeListener = new View.OnScrollChangeListener() {
             @Override
             public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
-                Log.d("sergey", String.format("981 scrollX: %s scrollY: %s, oldScrollX: %s, oldScrollY: %s width: %s", scrollX, scrollY, oldScrollX, oldScrollY, getWidth()));
+//                Log.d("sergey", String.format("981 scrollX: %s scrollY: %s, oldScrollX: %s, oldScrollY: %s width: %s", scrollX, scrollY, oldScrollX, oldScrollY, getWidth()));
                 float minScale = 0.4f;
                 float width = getWidth();
                 for(int i = 0; i < cells.size(); i++) {
