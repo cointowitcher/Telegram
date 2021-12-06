@@ -24,6 +24,7 @@ import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
@@ -38,6 +39,7 @@ import org.telegram.messenger.ImageLoader;
 import org.telegram.messenger.ImageLocation;
 import org.telegram.messenger.ImageReceiver;
 import org.telegram.messenger.R;
+import org.telegram.messenger.Randoms;
 import org.telegram.messenger.SvgHelper;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.Theme;
@@ -59,7 +61,11 @@ public class EmojisScrollComponent extends FrameLayout {
     private int type = 0;
     private Handler handler;
     private OnClickListenerx callback;
-    private ValueAnimator widthAnimator;
+    private AnimatorSet animatorSet;
+    private Drawable shadowDrawable;
+    private int itemWidths = 0;
+    private Circlex circleOne;
+    private Circlex circleTwo;
 
     public EmojisScrollComponent(Context context, Theme.ResourcesProvider resourcesProvider) {
         super(context);
@@ -74,10 +80,11 @@ public class EmojisScrollComponent extends FrameLayout {
     @Override
     protected void onDetachedFromWindow() {
         super.onDetachedFromWindow();
-        if (widthAnimator != null) {
-            widthAnimator.cancel();
+        if (animatorSet != null) {
+            animatorSet.cancel();
+            animatorSet.removeAllListeners();;
         }
-        widthAnimator = null;
+        animatorSet = null;
         handler = null;
         contentView = null;
         scrollView = null;
@@ -85,6 +92,8 @@ public class EmojisScrollComponent extends FrameLayout {
         cells = null;
         reactions = null;
         callback = null;
+        circleOne = null;
+        circleTwo = null;
     }
 
     public void setupOnClickListener(OnClickListenerx callback) {
@@ -93,25 +102,47 @@ public class EmojisScrollComponent extends FrameLayout {
 
     private void setup() {
         float r = 26f;
+//        shadowDrawable = getResources().getDrawable(R.drawable.shadow_35039);
+//        ImageView imageView = new ImageView(getContext());
+//        imageView.setImageDrawable(shadowDrawable);
+//        addView(imageView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+
+        circleOne = new Circlex(getContext(), AndroidUtilities.dp(15.2727f));
+        addView(circleOne, LayoutHelper.createFrame(15.2727f, 15.2727f, Gravity.TOP | Gravity.RIGHT, 0, 38.9f, 33.45f, 0));
+        View v11 = new View(getContext());
+        v11.setBackgroundColor(Color.WHITE);
+        circleOne.addView(v11, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+
+        circleTwo = new Circlex(getContext(), AndroidUtilities.dp(7.6363f));
+        addView(circleTwo, LayoutHelper.createFrame(7.6363f, 7.6363f, Gravity.TOP | Gravity.RIGHT, 0, 58.9f, 32, 0));
+        circleTwo.addView(new View(getContext()));
+        View v12 = new View(getContext());
+        v12.setBackgroundColor(Color.WHITE);
+        circleTwo.addView(v12, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+
         this.contentView = new RoundedHorizontalScrollView(getContext(), AndroidUtilities.dp(r));
-        addView(contentView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48)); // 48
-        contentView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48));
+        addView(contentView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48, Gravity.RIGHT)); // 48
         View bgView = new View(getContext());
         bgView.setBackgroundColor(0xffffffff);
         contentView.addView(bgView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
         scrollView = new HorizontalScrollView(getContext());
         contentView.addView(scrollView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        scrollView.setVerticalScrollBarEnabled(false);
+        scrollView.setHorizontalScrollBarEnabled(false);
 
         linearLayoutScroll = new LinearLayout(getContext());
         scrollView.addView(linearLayoutScroll, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT));
         ImageLoader.getInstance().clearMemory();
+
+        setClipChildren(false);
     }
 
     public void addItems(ArrayList<TLRPC.TL_availableReaction> reactions) {
         if (reactions.size() == cells.size()) {
             return;
         }
+        itemWidths = (int)(reactions.size() * AndroidUtilities.dp(48) + AndroidUtilities.dp(2.5f) * (reactions.size() - 1));
         //wqe
         this.reactions = reactions;
         cells = new ArrayList<>();
@@ -131,9 +162,11 @@ public class EmojisScrollComponent extends FrameLayout {
     }
 
     public void animateAppearing(long duration) {
-        contentView.setLayoutParams(LayoutHelper.createFrame((int)(getLayoutParams().width * 0.1f), 48, Gravity.RIGHT));
-        scrollView.setLayoutParams(LayoutHelper.createFrame((int)(getLayoutParams().width * 0.1f), 48, Gravity.RIGHT));
-        widthAnimator = ValueAnimator.ofInt((int)(getLayoutParams().width * 0.1f), getLayoutParams().width).setDuration(duration);
+        int fromWidth = (int)(getLayoutParams().width * 0.1f);
+        int toWidth = (int)(Math.min(itemWidths, getLayoutParams().width));
+        contentView.getLayoutParams().width = fromWidth;
+        scrollView.getLayoutParams().width = fromWidth;
+        ValueAnimator widthAnimator = ValueAnimator.ofInt(fromWidth, toWidth);
         widthAnimator.addUpdateListener(animation -> {
             Integer value = (Integer) animation.getAnimatedValue();
             contentView.getLayoutParams().width = value;
@@ -142,9 +175,41 @@ public class EmojisScrollComponent extends FrameLayout {
             scrollView.requestLayout();
         });
 
-        AnimatorSet animatorSet = new AnimatorSet();
+        ValueAnimator alphaAnimator = ValueAnimator.ofFloat(0, 1f);
+        alphaAnimator.addUpdateListener(animation -> {
+            float value = (float)animation.getAnimatedValue();
+            contentView.setAlpha(value);
+            circleOne.setAlpha(value);
+            circleOne.setAlpha(value);
+        });
+
+        ValueAnimator circleOneScaleAnimator = ValueAnimator.ofFloat(0f,1f);
+        circleOneScaleAnimator.addUpdateListener(animation -> {
+            float value = (float)animation.getAnimatedValue();
+            if (value <= 0.8) {
+                value = -1.875f * value * value + 3 * value;
+            } else {
+                value = -5 * value * value + 8 * value - 2;
+            }
+            circleOne.setScaleX(value);
+            circleOne.setScaleY(value);
+        });
+        ValueAnimator circleTwoScaleAnimator = ValueAnimator.ofFloat(0f,1f);
+        circleTwoScaleAnimator.addUpdateListener(animation -> {
+            float value = (float)animation.getAnimatedValue();
+            if (value <= 0.8) {
+                value = -1.875f * value * value + 3 * value;
+            } else {
+                value = -5 * value * value + 8 * value - 2;
+            }
+            circleTwo.setScaleX(value);
+            circleTwo.setScaleY(value);
+        });
+
+        animatorSet = new AnimatorSet();
+        animatorSet.setDuration(duration);
         animatorSet.setInterpolator(new AccelerateDecelerateInterpolator());
-        animatorSet.play(widthAnimator);
+        animatorSet.playTogether(widthAnimator, alphaAnimator, circleOneScaleAnimator, circleTwoScaleAnimator);
         animatorSet.start();
 
 
@@ -189,9 +254,9 @@ public class EmojisScrollComponent extends FrameLayout {
         public EmojisCell(@NonNull Context context, float leftMargin) {
             super(context);
             setLayoutParams(LayoutHelper.createFrame(48, 48, Gravity.CENTER_VERTICAL | Gravity.LEFT, leftMargin, 0f, 0f, 0f));
-            Random rnd = new Random();
-            int color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
-            setBackgroundColor(color);
+//            Random rnd = new Random();
+//            int color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
+//            setBackgroundColor(color);
 
             imageView = new BackupImageView(context);
             imageView.setAspectFit(true);
@@ -269,5 +334,11 @@ class RoundedHorizontalScrollView extends FrameLayout {
         }
         super.dispatchDraw(canvas);
         canvas.restoreToCount(saveCount);
+    }
+}
+
+class Circlex extends RoundedHorizontalScrollView {
+    public Circlex(Context context, float size) {
+        super(context, size);
     }
 }

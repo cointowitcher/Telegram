@@ -20045,15 +20045,21 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             boolean showMessageSeen = currentChat != null && message.isOutOwner() && message.isSent() && !message.isEditing() && !message.isSending() && !message.isSendError() && !message.isContentUnread() && !message.isUnread() && (ConnectionsManager.getInstance(currentAccount).getCurrentTime() - message.messageOwner.date < 7 * 86400)  && (ChatObject.isMegagroup(currentChat) || !ChatObject.isChannel(currentChat)) && chatInfo != null && chatInfo.participants_count < 50 && !(message.messageOwner.action instanceof TLRPC.TL_messageActionChatJoinedByRequest);
             MessageSeenView messageSeenView = null;
             EmojisScrollComponent scrollComponent = null;
+            int gr1 = Gravity.CENTER;
+            int leftMargin = 0;
             if (!getReactionsManager().availableReactions.isEmpty()) {
                 scrollComponent = new EmojisScrollComponent(v.getContext(), null);
-                EmojisScrollComponent finalScrollComponent = scrollComponent;
+                WeakReference weakReference = new WeakReference(scrollComponent);
                 scrollComponent.setupOnClickListener((emojiView) -> {
-                    showFullEmojiView((FrameLayout) emojiView, finalScrollComponent, message);
+                    EmojisScrollComponent emojisScrollComponent2 = (EmojisScrollComponent)weakReference.get();
+                    showFullEmojiView((FrameLayout) emojiView, emojisScrollComponent2, message);
                 });
                 scrimPopupContainerLayout.addView(scrollComponent, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, 48, 0, -8f + 10.8f, 0, 0));
+                scrimPopupContainerLayout.setClipChildren(false);
+                gr1 = Gravity.LEFT;
+                leftMargin = AndroidUtilities.dp(0);
             }
-            scrimPopupContainerLayout.addView(scrimPopupContainerLayoutContent, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
+            scrimPopupContainerLayout.addView(scrimPopupContainerLayoutContent, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, gr1, leftMargin, 0, 0, 0));
             if (showMessageSeen) {
                 messageSeenView = new MessageSeenView(contentView.getContext(), currentAccount, message, currentChat);
                 Drawable shadowDrawable2 = ContextCompat.getDrawable(contentView.getContext(), R.drawable.popup_fixed_alert).mutate();
@@ -23947,9 +23953,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
 
         public void removeMultReaction(ChatMessageCell cell, String reaction) {
-            getReactionsManager().sendReaction(cell.getMessageObject(), reaction, ChatActivity.this, (successful) -> {
-
+            getReactionsManager().sendReaction(cell.getMessageObject(), null, ChatActivity.this, (successful) -> {
             });
+//            MessageObject.removePersonalChosenReaction(cell.getMessageObject().messageOwner);
+//            updateRowWithMessageObject(cell.getMessageObject(), false);
         }
 
         @Override

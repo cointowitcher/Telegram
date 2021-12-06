@@ -63,8 +63,8 @@ public class ReactionsManager {
                 TLRPC.TL_messages_availableReactions resp = (TLRPC.TL_messages_availableReactions)response;
                 this.hash = resp.hash;
                 availableReactions = resp.reactions;
-                for(int i = 0; i < resp.reactions.size(); i++) {
-                    TLRPC.TL_availableReaction availableReactions = resp.reactions.get(i);
+                for(int i = 0; i < availableReactions.size(); i++) {
+                    TLRPC.TL_availableReaction availableReactions = this.availableReactions.get(i);
                     availableReactionHashMap.put(availableReactions.reaction, availableReactions);
                 }
             }
