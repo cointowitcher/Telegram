@@ -1964,6 +1964,13 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
         return allowStartAnimation;
     }
 
+    public void resetLottie() {
+        RLottieDrawable drawable = getLottieAnimation();
+        if (drawable == null) { return; }
+        drawable.stop();
+        drawable.setCurrentFrame(0);
+    }
+
     public void startLottie() {
         RLottieDrawable rLottieDrawable = getLottieAnimation();
         if (rLottieDrawable != null) {

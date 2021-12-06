@@ -19287,6 +19287,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             scrimPopupWindow.dismiss();
             scrimView = null;
         }
+        if (fullEmojiPopupWindow != null) {
+            fullEmojiPopupWindow.dismiss(false);
+            fullEmojiPopupWindow = null;
+            fullEmojiView = null;
+        }
 
         if (!AndroidUtilities.isTablet()) {
             if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
@@ -20454,6 +20459,18 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     String newReaction;
 
     private void showFullEmojiViewInternal(MessageObject messageObject, String reaction, ChatMessageCell cell, boolean isReactions2, EmojisScrollComponent.EmojisCell emojisCell, EmojisScrollComponent emojisScroll) {
+        if (messageObject.isReactionChosen(reaction)) { return; }
+        if (contentView.getContext().getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            MessageObject.addChosenReaction(messageObject.messageOwner, reaction);
+            chatAdapter.updateRowWithMessageObject(messageObject, false);
+            if (scrimPopupWindow != null) {
+                scrimPopupWindow.dismiss();
+                scrimPopupWindow = null;
+                menuDeleteItem = null;
+                scrimPopupWindowItems = null;
+            }
+            return;
+        }
         getMessagesController().skippedMessageId = messageObject.getId();
         float statusBarHeight = (Build.VERSION.SDK_INT >= 21 && !inBubbleMode ? AndroidUtilities.statusBarHeight : 0);
         fullEmojiView = new FullEmojiView(contentView.getContext(), isReactions2);

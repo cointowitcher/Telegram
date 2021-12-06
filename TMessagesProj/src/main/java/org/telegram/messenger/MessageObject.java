@@ -4423,7 +4423,7 @@ public class MessageObject {
     }
 
     public boolean isReactions2() {
-        return !isUserOrEncrypted() && !DialogObject.isEncryptedDialog(messageOwner.dialog_id);
+        return !isUserOrEncrypted() && !DialogObject.isEncryptedDialog(messageOwner.dialog_id) && messageOwner.grouped_id == 0;
     }
 
     public ArrayList<Integer> reactionsWidths = new ArrayList<>();
@@ -4448,6 +4448,9 @@ public class MessageObject {
     public static int defaultReactionItemImageTopPadding = AndroidUtilities.dp(3.2728f);
     public static int defaultReactionRightPadding = AndroidUtilities.dp(10);
 
+    String prevSnapshot;
+    float prevMaxWidth = 0;
+
     public boolean isReactionChosen(String reaction) {
         if (!hasReactions()) { return false; }
         for(int i = 0; i < messageOwner.reactions.results.size(); i++) {
@@ -4471,6 +4474,10 @@ public class MessageObject {
     public void generateReactionsLayout(float maxWidth) {
         if (!isReactions2()) { return; }
         if (messageOwner.reactions == null) { return; }
+        String newSnapshot = generateReactionsSnapshot();
+        if (newSnapshot.equals(prevSnapshot) && prevMaxWidth == maxWidth) { return; }
+        prevSnapshot = newSnapshot;
+        prevMaxWidth = maxWidth;
         // STODO: Check if width changed or reactions
         reactionsWidths.clear();
         reactionsLines.clear();

@@ -44,7 +44,6 @@ public class FullEmojiView extends FrameLayout {
 
     public FullEmojiView(@NonNull Context context, boolean isReactions2) {
         super(context);
-        ImageLoader.getInstance().clearMemory();
         this.isReactions2 = isReactions2;
 
         createBgView();
@@ -116,6 +115,7 @@ public class FullEmojiView extends FrameLayout {
 
             @Override
             public void onAnimationReady(ImageReceiver imageReceiver) {
+                imageReceiver.resetLottie();
                 FullEmojiView fullEmojiView = (FullEmojiView) weakReference1.get();
                 if(fullEmojiView == null) { return; }
                 fullEmojiView.regularImageLoaded = true;
@@ -130,6 +130,7 @@ public class FullEmojiView extends FrameLayout {
             }
             @Override
             public void onAnimationReady(ImageReceiver imageReceiver) {
+                imageReceiver.resetLottie();
                 FullEmojiView fullEmojiView = (FullEmojiView) weakReference1.get();
                 if(fullEmojiView == null) { return; }
                 fullEmojiView.effectsImageLoaded = true;
@@ -187,7 +188,7 @@ public class FullEmojiView extends FrameLayout {
         startRect[0] = emojiView.getWidth();
         startRect[1] = emojiView.getHeight();
         startRect[2] = loc1[0];
-        startRect[3] = (int)(loc1[1] - statusBarHeight);
+        startRect[3] = loc1[1];
         isInitiatedFromEmojiView = true;
         configure(emojiView.reaction, startRect, statusBarHeight);
     }

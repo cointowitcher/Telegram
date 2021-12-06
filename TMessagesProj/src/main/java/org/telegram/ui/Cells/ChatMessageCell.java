@@ -932,6 +932,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         reactionsLocations = new HashMap<>();
         multPaintBackground = new Paint();
         multPaintOutline = new Paint();
+        multPaintOutline.setColor(0xffffffff);
+        multPaintOutline.setStyle(Paint.Style.STROKE);
+        multPaintOutline.setStrokeWidth(4f);
         multTextPaint = new TextPaint();
 
         TAG = DownloadController.getInstance(currentAccount).generateObserverTag();
@@ -8547,9 +8550,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
             // Background outline
             if (isChosen) {
-                multPaintOutline.setColor(0xffffffff);
-                multPaintOutline.setStyle(Paint.Style.STROKE);
-                multPaintOutline.setStrokeWidth(4f);
                 Log.d("sergey", String.format("changeChosenReactionsChosenAlpha %s prev %s cur %s", transitionParams.changeReactionsChosenAlpha, transitionParams.previousReactionsChosenReaction, availableReaction.reaction));
                 if (transitionParams.animateChangeReactionsChosenAlpha && !isPreviousChosen) {
                     multPaintOutline.setAlpha((int) ((transitionParams.changeReactionsChosenAlpha) * 255));
@@ -8560,9 +8560,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 chosenReaction = availableReaction.reaction;
             }
             if (isPreviousChosen) {
-                multPaintOutline.setColor(0xffffffff);
-                multPaintOutline.setStyle(Paint.Style.STROKE);
-                multPaintOutline.setStrokeWidth(4f);
                 multPaintOutline.setAlpha((int)((1f - transitionParams.changeReactionsChosenAlpha) * 255));
                 canvas.drawRoundRect(0f, 0f, (float)width, (float)MessageObject.defaultReactionItemHeight, corners, corners, multPaintOutline);
             }

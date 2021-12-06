@@ -33,6 +33,8 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.exoplayer2.util.Log;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DocumentObject;
 import org.telegram.messenger.ImageLoader;
@@ -66,6 +68,7 @@ public class EmojisScrollComponent extends FrameLayout {
     private int itemWidths = 0;
     private Circlex circleOne;
     private Circlex circleTwo;
+    private OnScrollChangeListener onScrollChangeListener;
 
     public EmojisScrollComponent(Context context, Theme.ResourcesProvider resourcesProvider) {
         super(context);
@@ -94,6 +97,7 @@ public class EmojisScrollComponent extends FrameLayout {
         callback = null;
         circleOne = null;
         circleTwo = null;
+        onScrollChangeListener = null;
     }
 
     public void setupOnClickListener(OnClickListenerx callback) {
@@ -127,13 +131,56 @@ public class EmojisScrollComponent extends FrameLayout {
         contentView.addView(bgView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
         scrollView = new HorizontalScrollView(getContext());
+        scrollView.setFadingEdgeLength(AndroidUtilities.dp(20));
+        scrollView.setHorizontalFadingEdgeEnabled(true);
         contentView.addView(scrollView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
         scrollView.setVerticalScrollBarEnabled(false);
         scrollView.setHorizontalScrollBarEnabled(false);
 
+        final float minScale = 0.5f;
+        final float cellSize = AndroidUtilities.dp(48);
+        onScrollChangeListener = new View.OnScrollChangeListener() {
+            @Override
+            public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
+                Log.d("sergey", String.format("981 scrollX: %s scrollY: %s, oldScrollX: %s, oldScrollY: %s width: %s", scrollX, scrollY, oldScrollX, oldScrollY, getWidth()));
+                float minScale = 0.4f;
+                float width = getWidth();
+                for(int i = 0; i < cells.size(); i++) {
+                    EmojisCell cell = cells.get(i);
+                    if (cell.getRight() < scrollX || cell.getLeft() > scrollX + width) { continue; }
+                    if (cell.getLeft() < scrollX) {
+                        float part = (scrollX - cell.getLeft()) / cellSize;
+                        float scale;
+                        if (part > 0.7) {
+                            scale = minScale;
+                        } else {
+                            scale = minScale + (1 - minScale) * (1f - part);
+                        }
+                        cell.setScaleX(scale);
+                        cell.setScaleY(scale);
+                    } else if (cell.getRight() > (scrollX + width)) {
+                        float part = (cell.getRight() - (scrollX + width)) / cellSize;
+                        float scale;
+                        if (part > 0.7) {
+                            scale = minScale;
+                        } else {
+                            scale = minScale + (1 - minScale) * (1f - part);
+                        }
+
+                        cell.setScaleX(scale);
+                        cell.setScaleY(scale);
+                    } else {
+                        cell.setScaleY(1f);
+                        cell.setScaleX(1f);
+                    }
+                }
+            }
+        };
+
+        scrollView.setOnScrollChangeListener(onScrollChangeListener);
+
         linearLayoutScroll = new LinearLayout(getContext());
         scrollView.addView(linearLayoutScroll, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT));
-        ImageLoader.getInstance().clearMemory();
 
         setClipChildren(false);
     }
@@ -277,7 +324,7 @@ public class EmojisScrollComponent extends FrameLayout {
                 @Override
                 public void didSetImage(ImageReceiver imageReceiver, boolean set, boolean thumb, boolean memCache) {
                     didSetImage = true;
-
+                    imageReceiver.resetLottie();
                     tryPlay();
                 }
             });
