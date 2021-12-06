@@ -2659,6 +2659,35 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         sendReaction(messageObject, reaction, parentFragment, null);
     }
 
+    public void removeReaction(MessageObject messageObject, CharSequence reaction, ChatActivity parentFragment, CallbackAnything cb) {
+        if (messageObject == null || parentFragment == null) {
+            return;
+        }
+        TLRPC.TL_messages_sendReaction req = new TLRPC.TL_messages_sendReaction();
+        req.peer = getMessagesController().getInputPeer(messageObject.getDialogId());
+        req.msg_id = messageObject.getId();
+        if (reaction != null) {
+            req.reaction = reaction.toString();
+        }
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (response != null) {
+                getMessagesController().processUpdates((TLRPC.Updates) response, false);
+            }
+            if (cb != null) {
+                cb.callback(new Pair<TLObject, TLRPC.TL_error>(response, error));
+            }
+            /*AndroidUtilities.runOnUIThread(new Runnable() {
+                @Override
+                public void run() {
+                    waitingForVote.remove(key);
+                    if (finishRunnable != null) {
+                        finishRunnable.run();
+                    }
+                }
+            });*/
+        });
+    }
+
     public void sendReaction(MessageObject messageObject, CharSequence reaction, ChatActivity parentFragment, CallbackAnything cb) {
         if (messageObject == null || parentFragment == null) {
             return;

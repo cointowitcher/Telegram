@@ -238,6 +238,16 @@ public class MessageObject {
         }
     }
 
+    public String getChosenReaction2() {
+        if (!hasReactions()) { return null; }
+        for(int i = 0; i < messageOwner.reactions.results.size(); i++) {
+            if (messageOwner.reactions.results.get(i).chosen) {
+                return messageOwner.reactions.results.get(i).reaction;
+            }
+        }
+        return null;
+    }
+
 //    public static void addPersonalChosenReaction(TLRPC.Message message) {
 //        removePersonalChosenReaction();
 //    }
@@ -2204,18 +2214,28 @@ public class MessageObject {
             return;
         }
         boolean didFound = false;
+        int removeIndex = -1;
         if (message.reactions != null && message.reactions.results != null) {
             for (int a = 0, N = message.reactions.results.size(); a < N; a++) {
                 TLRPC.TL_reactionCount reactionCount = message.reactions.results.get(a);
+                if (reactionCount.chosen) {
+                    if (reactionCount.count == 1) {
+                        removeIndex = a;
+                    }
+                    reactionCount.chosen = false;
+                    reactionCount.count -= 1;
+                }
                 if (reactionCount.reaction.equals(reaction)) {
                     didFound = true;
                     if (!reactionCount.chosen) {
                         reactionCount.count += 1;
                         reactionCount.chosen = true;
                     }
-                    break;
                 }
             }
+        }
+        if (removeIndex != -1) {
+            message.reactions.results.remove(removeIndex);
         }
         if (!didFound) {
             TLRPC.TL_reactionCount reactionCount = new TLRPC.TL_reactionCount();
@@ -4427,6 +4447,16 @@ public class MessageObject {
     public static float defaultReactionItemTextTopPadding = AndroidUtilities.dpf2(6.5f);
     public static int defaultReactionItemImageTopPadding = AndroidUtilities.dp(3.2728f);
     public static int defaultReactionRightPadding = AndroidUtilities.dp(10);
+
+    public boolean isReactionChosen(String reaction) {
+        if (!hasReactions()) { return false; }
+        for(int i = 0; i < messageOwner.reactions.results.size(); i++) {
+            if (messageOwner.reactions.results.get(i).reaction.toString().equals(reaction) && messageOwner.reactions.results.get(i).chosen) {
+                return true;
+            }
+        }
+        return false;
+    }
 
     public String generateReactionsSnapshot() {
         if (messageOwner.reactions == null) return "";

@@ -462,6 +462,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private int[] pressedState = new int[]{android.R.attr.state_enabled, android.R.attr.state_pressed};
     private float animatingLoadingProgressProgress;
 
+    public float changeReactionsChosenAlpha;
+    public String previousReactionsChosenReaction;
+    public boolean animateChangeReactionsChosenAlpha;
+
     private RoundVideoPlayingDrawable roundVideoPlayingDrawable;
 
     private StaticLayout docTitleLayout;
@@ -8490,8 +8494,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private Paint multPaintBackground;
     private Paint multPaintOutline;
     private TextPaint multTextPaint;
+    private String chosenReaction;
 
     private void drawMultReactions(Canvas canvas) {
+        chosenReaction = null;
         if (!currentMessageObject.isReactions2()) { return; }
         if (currentMessageObject.messageOwner.reactions.results.size() != multipleReactionsReceivers.size()) {
             boolean shouldAdd = currentMessageObject.messageOwner.reactions.results.size() > multipleReactionsReceivers.size();
@@ -8511,14 +8517,15 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         int top = layoutHeight - AndroidUtilities.dp(2);
         canvas.translate(backgroundDrawableLeft, top + transitionParams.deltaBottom);
         int currentLine = 0;
-        int length = currentMessageObject.messageOwner.reactions.results.size();
+        int length = currentMessageObject.reactionsImage.size();
         for(int i = 0; i < length; i++) {
             TLRPC.TL_availableReaction availableReaction = currentMessageObject.reactionsImage.get(i);
             if (availableReaction == null) { continue; }
             int width = currentMessageObject.reactionsWidths.get(i);
             int translationX = currentMessageObject.reactionsTranslationsX.get(i);
             int translationY = currentMessageObject.reactionsTranslationsY.get(i);
-            boolean isSelected = currentMessageObject.messageOwner.reactions.results.get(i).chosen;
+            boolean isChosen = currentMessageObject.messageOwner.reactions.results.get(i).chosen;
+            boolean isPreviousChosen = availableReaction.reaction.equals(transitionParams.previousReactionsChosenReaction);
             String reactionText = currentMessageObject.reactionsTexts.get(i);
             canvas.save();
             canvas.translate(translationX, translationY);
@@ -8537,10 +8544,24 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             canvas.drawRoundRect(0f, 0f, (float)width, (float)MessageObject.defaultReactionItemHeight, corners, corners, multPaintBackground);
 
             // Background outline
-            if (isSelected) {
+            if (isChosen) {
                 multPaintOutline.setColor(0xffffffff);
                 multPaintOutline.setStyle(Paint.Style.STROKE);
-                multPaintOutline.setStrokeWidth(1.4545f);
+                multPaintOutline.setStrokeWidth(4f);
+                Log.d("sergey", String.format("changeChosenReactionsChosenAlpha %s prev %s cur %s", transitionParams.changeReactionsChosenAlpha, transitionParams.previousReactionsChosenReaction, availableReaction.reaction));
+                if (transitionParams.animateChangeReactionsChosenAlpha && !isPreviousChosen) {
+                    multPaintOutline.setAlpha((int) ((transitionParams.changeReactionsChosenAlpha) * 255));
+                } else {
+                    multPaintOutline.setAlpha(255);
+                }
+                canvas.drawRoundRect(0f, 0f, (float)width, (float)MessageObject.defaultReactionItemHeight, corners, corners, multPaintOutline);
+                chosenReaction = availableReaction.reaction;
+            }
+            if (isPreviousChosen) {
+                multPaintOutline.setColor(0xffffffff);
+                multPaintOutline.setStyle(Paint.Style.STROKE);
+                multPaintOutline.setStrokeWidth(4f);
+                multPaintOutline.setAlpha((int)((1f - transitionParams.changeReactionsChosenAlpha) * 255));
                 canvas.drawRoundRect(0f, 0f, (float)width, (float)MessageObject.defaultReactionItemHeight, corners, corners, multPaintOutline);
             }
 
@@ -15126,6 +15147,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         public int addedCount;
         public float reactionsTransitionAlpha = 100f;
 
+        public float changeReactionsChosenAlpha;
+        public String previousReactionsChosenReaction;
+        public String previousReactionsChosenReactionForRecord;
+        public boolean animateChangeReactionsChosenAlpha;
+
         public void recordDrawingState() {
             wasDraw = true;
             lastDrawingImageX = photoImage.getImageX();
@@ -15195,6 +15221,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             lastForwardNameWidth = forwardedNameWidth;
             lastReactionsHeight = getMessageObject().getReactionsHeight();
             lastReactionsCount = getMessageObject().reactionsTexts.size();
+            previousReactionsChosenReactionForRecord = chosenReaction;
         }
 
         public void recordDrawingStatePreview() {
@@ -15447,6 +15474,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             animatingForwardedNameLayout[0] = null;
             animatingForwardedNameLayout[1] = null;
             reactionsTransitionAlpha = 100f;
+//            changeReactionsChosenAlpha = 1;
+            previousReactionsChosenReaction = null;
+            animateChangeReactionsChosenAlpha = false;
         }
 
         public boolean supportChangeAnimation() {

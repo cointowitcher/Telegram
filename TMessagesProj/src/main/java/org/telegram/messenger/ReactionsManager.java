@@ -75,6 +75,13 @@ public class ReactionsManager {
         return availableReactionHashMap.get(reaction);
     }
 
+    public void removeReaction(MessageObject messageObject, String reaction, ChatActivity parent, SendReactionResponse response) {
+        getSendMessagesHelper().removeReaction(messageObject, reaction, parent, (pair) -> {
+            Pair<TLObject, TLRPC.TL_error> obj = (Pair<TLObject, TLRPC.TL_error>) pair;
+            response.didSend(obj.first != null);
+        });
+    }
+
     public void sendReaction(MessageObject messageObject, String reaction, ChatActivity parent, SendReactionResponse response) {
         getSendMessagesHelper().sendReaction(messageObject, reaction, parent, (pair) -> {
             Pair<TLObject, TLRPC.TL_error> obj = (Pair<TLObject, TLRPC.TL_error>) pair;

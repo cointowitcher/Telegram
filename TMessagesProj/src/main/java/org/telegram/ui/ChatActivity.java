@@ -20524,6 +20524,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         });
         MessageObject.addChosenReaction(messageObject.messageOwner, reaction);
         if (isReactions2) {
+            chatAdapter.updateRowWithMessageObject(messageObject, false);
         } else {
             if (cell.getMessageObject().isAnyPersonalChosenReaction()) {
                 cell.animateChosenReactionDim();
@@ -23452,7 +23453,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
                     @Override
                     public void didPressMultReactions(ChatMessageCell cell, String reaction) {
-                        showFullEmojiView(cell, reaction);
+                        if (cell.getMessageObject().isReactionChosen(reaction)) {
+                            removeMultReaction(cell, reaction);
+                        } else {
+                            showFullEmojiView(cell, reaction);
+                        }
                     }
                 });
                 if (currentEncryptedChat == null) {
@@ -23938,6 +23943,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                     }
                 }
             }
+        }
+
+
+
+        public void removeMultReaction(ChatMessageCell cell, String reaction) {
+            getReactionsManager().sendReaction(cell.getMessageObject(), reaction, ChatActivity.this, (successful) -> {
+
+            });
         }
 
         @Override

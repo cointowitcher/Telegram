@@ -496,7 +496,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
 
                 if (group == null && params.wasDraw) {
                     boolean isOut = chatMessageCell.getMessageObject().isOutOwner();
-                    boolean didUpdateRecycler = false;
+                    boolean shouldUpdateRecycler = false;
                     if ((isOut && params.lastDrawingBackgroundRect.left != chatMessageCell.getBackgroundDrawableLeft()) ||
                             (!isOut && params.lastDrawingBackgroundRect.right != chatMessageCell.getBackgroundDrawableRight()) ||
                             params.lastDrawingBackgroundRect.top != chatMessageCell.getBackgroundDrawableTop() ||
@@ -516,9 +516,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
                         params.deltaTop = -moveInfo.deltaTop;
                         params.deltaBottom = -moveInfo.deltaBottom;
 
-                        recyclerListView.setClipChildren(false);
-                        recyclerListView.invalidate();
-                        didUpdateRecycler = true;
+                        shouldUpdateRecycler = true;
                     } else if(params.lastReactionsHeight != chatMessageCell.getMessageObject().getReactionsHeight()) {
                         //moveInfo.deltaBottom = chatMessageCell.getMessageObject().getReactionsHeight() + params.lastReactionsHeight;
                         moveInfo.deltaBottom = 0;
@@ -528,19 +526,24 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
 //                        params.deltaRight = -moveInfo.deltaRight;
 //                        params.deltaTop = -moveInfo.deltaTop;
 //                        params.deltaBottom = -moveInfo.deltaBottom;
-
-                        recyclerListView.setClipChildren(false);
-                        recyclerListView.invalidate();
-                        didUpdateRecycler = true;
+                        shouldUpdateRecycler = true;
                     }
                     moveInfo.animateReactionsAddedCount = chatMessageCell.getMessageObject().reactionsWidths.size() - params.lastReactionsCount;
                     if (moveInfo.animateReactionsAddedCount != 0) {
                         params.addedCount = moveInfo.animateReactionsAddedCount;
                         params.reactionsTransitionAlpha = 0f;
-                        if (!didUpdateRecycler) {
-                            recyclerListView.setClipChildren(false);
-                            recyclerListView.invalidate();
-                        }
+                        shouldUpdateRecycler = true;
+                    }
+                    if (params.previousReactionsChosenReactionForRecord != chatMessageCell.getMessageObject().getChosenReaction2()) {
+                        moveInfo.animateReactionsChangeChosen = true;
+                        params.previousReactionsChosenReaction = params.previousReactionsChosenReactionForRecord;
+                        params.animateChangeReactionsChosenAlpha = true;
+                        params.changeReactionsChosenAlpha = 0f;
+                        shouldUpdateRecycler = true;
+                    }
+                    if (shouldUpdateRecycler) {
+                        recyclerListView.setClipChildren(false);
+                        recyclerListView.invalidate();
                     }
                 }
             }
@@ -661,7 +664,7 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
                 chatMessageCell.getTransitionParams().animateChangeProgress = 0f;
             }
 
-            if (deltaX == 0 && deltaY == 0 && !moveInfo.animateImage && !moveInfo.animateRemoveGroup && !moveInfo.animateChangeGroupBackground && !moveInfo.animatePinnedBottom && !moveInfo.animateBackgroundOnly && !moveInfo.animateChangeInternal && moveInfo.animateReactionsAddedCount == 0) {
+            if (deltaX == 0 && deltaY == 0 && !moveInfo.animateImage && !moveInfo.animateRemoveGroup && !moveInfo.animateChangeGroupBackground && !moveInfo.animatePinnedBottom && !moveInfo.animateBackgroundOnly && !moveInfo.animateChangeInternal && moveInfo.animateReactionsAddedCount == 0 && !moveInfo.animateReactionsChangeChosen) {
                 dispatchMoveFinished(holder);
                 return false;
             }
@@ -864,9 +867,20 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
                 params.animateChange = true;
                 params.addedCount = moveInfoExtended.animateReactionsAddedCount;
                 params.reactionsTransitionAlpha = 0;
-                valueAnimator.setDuration(3000);
                 valueAnimator.addUpdateListener(animation -> {
                     params.reactionsTransitionAlpha = (float) animation.getAnimatedValue();
+                    chatMessageCell.invalidate();
+                });
+                animatorSet.playTogether(valueAnimator);
+            }
+            if (moveInfoExtended.animateReactionsChangeChosen) {
+                ValueAnimator valueAnimator = ValueAnimator.ofFloat(0, 1f);
+                params.animateChange = true;
+                params.changeReactionsChosenAlpha = 0;
+                params.animateChangeReactionsChosenAlpha = true;
+                valueAnimator.addUpdateListener(animation -> {
+                    params.changeReactionsChosenAlpha = (float) animation.getAnimatedValue();
+                    chatMessageCell.invalidate();
                 });
                 animatorSet.playTogether(valueAnimator);
             }
@@ -1542,6 +1556,8 @@ public class ChatListItemAnimator extends DefaultItemAnimator {
         boolean animateRemoveGroup;
 
         int animateReactionsAddedCount;
+
+        boolean animateReactionsChangeChosen;
 
         MoveInfoExtended(RecyclerView.ViewHolder holder, int fromX, int fromY, int toX, int toY) {
             super(holder, fromX, fromY, toX, toY);
