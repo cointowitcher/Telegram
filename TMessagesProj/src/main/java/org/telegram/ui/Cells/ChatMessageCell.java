@@ -935,7 +935,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         multPaintOutline = new Paint();
         multPaintOutline.setColor(0xffffffff);
         multPaintOutline.setStyle(Paint.Style.STROKE);
-        multPaintOutline.setStrokeWidth(4f);
+        multPaintOutline.setStrokeWidth(AndroidUtilities.dpf2(1.454545f));
         multTextPaint = new TextPaint();
 
         TAG = DownloadController.getInstance(currentAccount).generateObserverTag();
@@ -7148,7 +7148,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             inLayout = false;
         }
         updateSelectionTextPosition();
-        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), totalHeight + keyboardHeight + currentMessageObject.getReactionsHeight());
+        setMeasuredDimension(MeasureSpec.getSize(widthMeasureSpec), totalHeight + keyboardHeight + (currentMessageObject != null ? currentMessageObject.getReactionsHeight() : 0));
     }
 
     public void forceResetMessageObject() {

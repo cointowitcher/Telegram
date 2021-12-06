@@ -323,8 +323,12 @@ public class EmojisScrollComponent extends FrameLayout {
             imageView.imageReceiver.setDelegate(new ImageReceiver.ImageReceiverDelegate() {
                 @Override
                 public void didSetImage(ImageReceiver imageReceiver, boolean set, boolean thumb, boolean memCache) {
+                }
+
+                @Override
+                public void onAnimationReady(ImageReceiver imageReceiver) {
+                    ImageReceiver.ImageReceiverDelegate.super.onAnimationReady(imageReceiver);
                     didSetImage = true;
-                    imageReceiver.resetLottie();
                     tryPlay();
                 }
             });
@@ -340,6 +344,7 @@ public class EmojisScrollComponent extends FrameLayout {
             if (imageView == null || imageView.imageReceiver == null || imageView.imageReceiver.getLottieAnimation() == null) {
                 return;
             }
+            imageView.imageReceiver.resetLottie();
             imageView.imageReceiver.startLottie();
         }
     }

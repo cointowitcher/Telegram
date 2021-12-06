@@ -2210,6 +2210,11 @@ public class MessageObject {
     }
 
     public static void addChosenReaction(TLRPC.Message message, String reaction) {
+        BooleanClass t = new BooleanClass();
+        addChosenReaction(message, reaction, t);
+    }
+
+    public static void addChosenReaction(TLRPC.Message message, String reaction, BooleanClass didExistSuchEmoji) {
         if (message == null || reaction == null) {
             return;
         }
@@ -2234,6 +2239,7 @@ public class MessageObject {
                 }
             }
         }
+        didExistSuchEmoji.aBoolean = didFound;
         if (removeIndex != -1) {
             message.reactions.results.remove(removeIndex);
         }

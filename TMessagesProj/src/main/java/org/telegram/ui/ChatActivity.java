@@ -103,6 +103,7 @@ import org.telegram.PhoneFormat.PhoneFormat;
 import org.telegram.messenger.AccountInstance;
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.ApplicationLoader;
+import org.telegram.messenger.BooleanClass;
 import org.telegram.messenger.BuildConfig;
 import org.telegram.messenger.BuildVars;
 import org.telegram.messenger.ChatObject;
@@ -20554,7 +20555,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 } else {
                     coords = cell.getLocationInformationOfMultipleReaction(reaction);
                 }
-                if (coords == null) {
+                if (coords == null || messageObject.messageOwner.grouped_id != 0) {
                     fullEmojiView.disappearSimple();
                 } else {
                     fullEmojiView.disappear(coords);
@@ -20590,8 +20591,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 chatActivity.fullEmojiView = null;
             }
         });
-        MessageObject.addChosenReaction(messageObject.messageOwner, reaction);
+        BooleanClass didExistSuchEmoji = new BooleanClass();
+        didExistSuchEmoji.aBoolean = false;
+        MessageObject.addChosenReaction(messageObject.messageOwner, reaction, didExistSuchEmoji);
         if (isReactions2) {
+            if (!didExistSuchEmoji.aBoolean) {
+                cell.reactionAlphaZero = reaction;
+            }
             chatAdapter.updateRowWithMessageObject(messageObject, false);
         } else {
             if (cell.getMessageObject().isAnyPersonalChosenReaction()) {
@@ -23524,7 +23530,20 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         if (cell.getMessageObject().isReactionChosen(reaction)) {
                             removeMultReaction(cell, reaction);
                         } else {
-                            showFullEmojiView(cell, reaction);
+                            boolean shouldShow = false;
+                            if (currentChat != null) {
+                                TLRPC.ChatFull cf =  getMessagesController().getChatFull(currentChat.id);
+                                if (cf.available_reactions != null) {
+                                    shouldShow = cf.available_reactions.contains(reaction);
+                                } else {
+                                    shouldShow = true;
+                                }
+                            } else {
+                                shouldShow = true;
+                            }
+                            if (shouldShow) {
+                                showFullEmojiView(cell, reaction);
+                            }
                         }
                     }
                 });

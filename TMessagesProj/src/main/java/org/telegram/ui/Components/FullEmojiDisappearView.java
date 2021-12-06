@@ -66,7 +66,7 @@ public class FullEmojiDisappearView extends FrameLayout {
         AnimatorSet animatorSet = new AnimatorSet();
         animatorSet.setDuration(300);
         final float direction = isShownInRight ? 1 : -1;
-        final float TRANSLATION = 300;
+        final float TRANSLATION = AndroidUtilities.dpf2(109f);
         ValueAnimator animatorTranslation = ValueAnimator.ofFloat(0, 1);
         animatorTranslation.addUpdateListener(valueAnimator -> {
             float progress = (float)valueAnimator.getAnimatedValue();

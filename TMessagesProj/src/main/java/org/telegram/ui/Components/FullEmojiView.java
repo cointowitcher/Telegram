@@ -101,6 +101,7 @@ public class FullEmojiView extends FrameLayout {
         effectsImageView.setLayerNum(1);
         effectsImageView.imageReceiver.setAllowDecodeSingleFrame(false);
         effectsImageView.imageReceiver.setAllowStartLottieAnimation(false);
+        effectsImageView.setAlpha(0);
         effectsImageView.imageReceiver.setAutoRepeat(0);
 
         staticImageView = new BackupImageView(getContext());
@@ -145,6 +146,7 @@ public class FullEmojiView extends FrameLayout {
     void startAnimation() {
         if (!regularImageLoaded || !effectsImageLoaded) { return; }
         didStart = true;
+        effectsImageView.setAlpha(1);
         FullEmojiView fullEmojiView = this;
         fullEmojiView.delegate.loadedAnimation();
         fullEmojiView.imageView.setAlpha(1);
