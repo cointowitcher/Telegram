@@ -51,7 +51,7 @@ import java.util.Set;
 
 public class EmojisScrollComponent extends FrameLayout {
     private Theme.ResourcesProvider resourcesProvider;
-    private View backgroundView;
+    private FrameLayout contentView;
     private HorizontalScrollView scrollView;
     private LinearLayout linearLayoutScroll;
     private ArrayList<EmojisCell> cells;
@@ -79,7 +79,7 @@ public class EmojisScrollComponent extends FrameLayout {
         }
         widthAnimator = null;
         handler = null;
-        backgroundView = null;
+        contentView = null;
         scrollView = null;
         linearLayoutScroll = null;
         cells = null;
@@ -92,12 +92,16 @@ public class EmojisScrollComponent extends FrameLayout {
     }
 
     private void setup() {
-        this.backgroundView = new View(getContext());
-        this.backgroundView.setBackgroundColor(Color.WHITE);
-        addView(backgroundView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        float r = 26f;
+        this.contentView = new RoundedHorizontalScrollView(getContext(), AndroidUtilities.dp(r));
+        addView(contentView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48)); // 48
+        contentView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 48));
+        View bgView = new View(getContext());
+        bgView.setBackgroundColor(0xffffffff);
+        contentView.addView(bgView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
         scrollView = new HorizontalScrollView(getContext());
-        addView(scrollView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
+        contentView.addView(scrollView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
         linearLayoutScroll = new LinearLayout(getContext());
         scrollView.addView(linearLayoutScroll, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT));
@@ -127,13 +131,13 @@ public class EmojisScrollComponent extends FrameLayout {
     }
 
     public void animateAppearing(long duration) {
-        backgroundView.setLayoutParams(LayoutHelper.createFrame((int)(getLayoutParams().width * 0.1f), getLayoutParams().height, Gravity.RIGHT));
-        scrollView.setLayoutParams(LayoutHelper.createFrame((int)(getLayoutParams().width * 0.1f), getLayoutParams().height, Gravity.RIGHT));
+        contentView.setLayoutParams(LayoutHelper.createFrame((int)(getLayoutParams().width * 0.1f), 48, Gravity.RIGHT));
+        scrollView.setLayoutParams(LayoutHelper.createFrame((int)(getLayoutParams().width * 0.1f), 48, Gravity.RIGHT));
         widthAnimator = ValueAnimator.ofInt((int)(getLayoutParams().width * 0.1f), getLayoutParams().width).setDuration(duration);
         widthAnimator.addUpdateListener(animation -> {
             Integer value = (Integer) animation.getAnimatedValue();
-            backgroundView.getLayoutParams().width = value;
-            backgroundView.requestLayout();
+            contentView.getLayoutParams().width = value;
+            contentView.requestLayout();
             scrollView.getLayoutParams().width = value;
             scrollView.requestLayout();
         });
@@ -184,7 +188,7 @@ public class EmojisScrollComponent extends FrameLayout {
 
         public EmojisCell(@NonNull Context context, float leftMargin) {
             super(context);
-            setLayoutParams(LayoutHelper.createFrame(44, 44, Gravity.CENTER_VERTICAL | Gravity.LEFT, leftMargin, 0f, 0f, 0f));
+            setLayoutParams(LayoutHelper.createFrame(48, 48, Gravity.CENTER_VERTICAL | Gravity.LEFT, leftMargin, 0f, 0f, 0f));
             Random rnd = new Random();
             int color = Color.argb(255, rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
             setBackgroundColor(color);
@@ -233,4 +237,37 @@ public class EmojisScrollComponent extends FrameLayout {
         void selected(FrameLayout frameLayout);
     }
 
+}
+
+class RoundedHorizontalScrollView extends FrameLayout {
+    private Path mClip;
+    private float mRadius;
+    float radii[];
+
+    public RoundedHorizontalScrollView(Context context, float mRadius) {
+        super(context);
+        this.mRadius = mRadius;
+        radii = new float[8];
+        for(int i = 0; i < 8; i++) {
+            radii[i] = mRadius;
+        }
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        mClip = new Path();
+        RectF rectRound = new RectF(0, 0, w, h);
+        mClip.addRoundRect(rectRound, radii, Path.Direction.CW);
+    }
+
+    @Override
+    protected void dispatchDraw(Canvas canvas) {
+        int saveCount = canvas.save();
+        if (mRadius > 0) {
+            canvas.clipPath(mClip);
+        }
+        super.dispatchDraw(canvas);
+        canvas.restoreToCount(saveCount);
+    }
 }
