@@ -29,6 +29,7 @@ import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
+import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.Shader;
@@ -3221,30 +3222,11 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         setMessageContent(getMessageObject(), getCurrentMessagesGroup(), isPinnedBottom(), isPinnedTop());
     }
 
-    Handler h;
     String reactionsSnapshot;
 
     @SuppressLint("WrongConstant")
     private void setMessageContent(MessageObject messageObject, MessageObject.GroupedMessages groupedMessages, boolean bottomNear, boolean topNear) {
         WeakReference ss = new WeakReference(this);
-        if (currentMessageObject != messageObject) {
-            h = null;
-        }
-        if (false && messageObject.messageText.toString().equals("Dhjd hi ifof") && h == null) {
-            h = new Handler();
-            h.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    if (ss == null) {
-                        return;
-                    }
-                    MessageObject.addChosenReaction(messageObject.messageOwner, String.valueOf((new Random()).nextInt(500)));
-                    messageObject.forceUpdate = true;
-                    setMessageContent(messageObject, getCurrentMessagesGroup(), bottomNear, topNear);
-                    h.postDelayed(this, 1000);
-                }
-            }, 1000);
-        }
         messageObject.updateChosenReactions();
         if (currentMessageObject != messageObject) {
             chosenReactionAlpha = null;
@@ -6083,7 +6065,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 //            boolean test123 = messageObject.messageOwner.reactions != null && !messageObject.messageOwner.reactions.results.isEmpty();
             boolean test123 = false;
             if (messageObject.isReactions2()) {
-                messageObject.generateReactionsLayout(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
+                messageObject.generateReactionsLayout(widthForReactions());
             }
 //            substractBackgroundHeight2 = messageObject.getReactionsHeight();
 
@@ -6346,7 +6328,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
         if (isReactionsShapshotDifferent && messageObject.isReactions2()) {
             float previousReactionsHeight = messageObject.getReactionsHeight();
-            messageObject.generateReactionsLayout(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
+            messageObject.generateReactionsLayout(widthForReactions());
             if (Math.abs(messageObject.getReactionsHeight() - previousReactionsHeight) > 0.5) {
                 messageObject.forceUpdate = true;
                 setMessageObject(messageObject, groupedMessages, bottomNear, topNear);
@@ -6620,6 +6602,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (getParent() != null) {
             ((View) getParent()).invalidate();
         }
+    }
+
+    public int widthForReactions() {
+        return getBackgroundDrawableRight() - getBackgroundDrawableLeft() - AndroidUtilities.dp(mediaBackground || drawPinnedBottom ? 1 : 7);
     }
 
     @Override
@@ -8517,10 +8503,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
         }
         reactionsLocations.clear();
-//        currentMessageObject.generateReactionsLayout(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
         canvas.save();
         int top = layoutHeight - AndroidUtilities.dp(2);
-        canvas.translate(backgroundDrawableLeft, top + transitionParams.deltaBottom);
+        float translateX1 = backgroundDrawableLeft + AndroidUtilities.dp(mediaBackground || drawPinnedBottom ? 1 : 7);
+        canvas.translate(translateX1, top + transitionParams.deltaBottom);
         int currentLine = 0;
         int length = currentMessageObject.reactionsImage.size();
         for(int i = 0; i < length; i++) {
@@ -8534,7 +8520,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             String reactionText = currentMessageObject.reactionsTexts.get(i);
             canvas.save();
             canvas.translate(translationX, translationY);
-            reactionsLocations.put(availableReaction.reaction, new SwiftRect(backgroundDrawableLeft + translationX, top + translationY, width, MessageObject.defaultReactionItemHeight));
+            reactionsLocations.put(availableReaction.reaction, new SwiftRect(translateX1 + translationX, top + translationY, width, MessageObject.defaultReactionItemHeight));
             // Scale
             if (transitionParams.addedCount >= length - i) {
                 float scaleBasedOnItem = transitionParams.reactionsTransitionAlpha - 0.25f * (transitionParams.addedCount - (length + 1 - i));
