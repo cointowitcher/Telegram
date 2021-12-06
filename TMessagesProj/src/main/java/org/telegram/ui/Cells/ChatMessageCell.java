@@ -6079,7 +6079,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
 //            boolean test123 = messageObject.messageOwner.reactions != null && !messageObject.messageOwner.reactions.results.isEmpty();
             boolean test123 = false;
-            messageObject.generateReactionsLayout(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
+            if (messageObject.isReactions2()) {
+                messageObject.generateReactionsLayout(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
+            }
 //            substractBackgroundHeight2 = messageObject.getReactionsHeight();
 
             if (test123 || !messageObject.isRestrictedMessage && currentPosition == null && (messageObject.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup)) {
@@ -6339,7 +6341,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         accessibilityVirtualViewBounds.clear();
         transitionParams.updatePhotoImageX = true;
 
-        if (isReactionsShapshotDifferent) {
+        if (isReactionsShapshotDifferent && messageObject.isReactions2()) {
             float previousReactionsHeight = messageObject.getReactionsHeight();
             messageObject.generateReactionsLayout(getBackgroundDrawableRight() - getBackgroundDrawableLeft());
             if (Math.abs(messageObject.getReactionsHeight() - previousReactionsHeight) > 0.5) {
@@ -8498,7 +8500,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     private void drawMultReactions(Canvas canvas) {
         chosenReaction = null;
-        if (!currentMessageObject.isReactions2()) { return; }
+        if (!currentMessageObject.isReactions2() || currentMessageObject.messageOwner.reactions == null) { return; }
         if (currentMessageObject.messageOwner.reactions.results.size() != multipleReactionsReceivers.size()) {
             boolean shouldAdd = currentMessageObject.messageOwner.reactions.results.size() > multipleReactionsReceivers.size();
             int change = Math.abs(currentMessageObject.messageOwner.reactions.results.size() - multipleReactionsReceivers.size());

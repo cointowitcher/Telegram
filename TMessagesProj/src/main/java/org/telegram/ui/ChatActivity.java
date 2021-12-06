@@ -20425,7 +20425,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     Timer pollingTimer;
     private void enablePollingReactionEmojis() {
-        if (true) { return; }
         if (pollingTimer != null) { return; }
         pollingTimer = new Timer();
         pollingTimer.schedule(new TimerTask() {
@@ -20451,7 +20450,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private void showFullEmojiViewInternal(MessageObject messageObject, String reaction, ChatMessageCell cell, boolean isReactions2, EmojisScrollComponent.EmojisCell emojisCell, EmojisScrollComponent emojisScroll) {
         getMessagesController().skippedMessageId = messageObject.getId();
         float statusBarHeight = (Build.VERSION.SDK_INT >= 21 && !inBubbleMode ? AndroidUtilities.statusBarHeight : 0);
-        fullEmojiView = new FullEmojiView(contentView.getContext(), true);
+        fullEmojiView = new FullEmojiView(contentView.getContext(), isReactions2);
         if (emojisCell == null) {
             fullEmojiView.configure(getReactionsManager().getAvailableReaction(reaction), cell.getLocationInformationOfMultipleReaction(reaction), statusBarHeight);
         } else {

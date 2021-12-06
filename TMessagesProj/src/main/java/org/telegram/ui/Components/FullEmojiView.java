@@ -12,6 +12,8 @@ import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 
+import com.google.android.exoplayer2.util.Log;
+
 import org.telegram.messenger.AndroidUtilities;
 import org.telegram.messenger.DocumentObject;
 import org.telegram.messenger.ImageLoader;
@@ -173,6 +175,7 @@ public class FullEmojiView extends FrameLayout {
     int[] endLocation;
     float statusBarHeight;
     TLRPC.Document staticIcon;
+    boolean isInitiatedFromEmojiView = false;
 
     public void configure(EmojisScrollComponent.EmojisCell emojiView, FrameLayout emojiScroll, float statusBarHeight) {
         int[] loc1 = new int[2];
@@ -185,7 +188,7 @@ public class FullEmojiView extends FrameLayout {
         startRect[1] = emojiView.getHeight();
         startRect[2] = loc1[0];
         startRect[3] = (int)(loc1[1] - statusBarHeight);
-
+        isInitiatedFromEmojiView = true;
         configure(emojiView.reaction, startRect, statusBarHeight);
     }
 
@@ -261,8 +264,14 @@ public class FullEmojiView extends FrameLayout {
         this.endLocation = endLocation;
         float translationX, translationY;
         if (isReactions2) {
-            translationX = endLocation[2] - startX;
-            translationY = endLocation[3] - startY;
+            Log.d("sergey", "x981 isReactions2");
+            if (isInitiatedFromEmojiView) { // I don't know why
+                translationX = endLocation[2] - startX - (endLocation[0] / 2) * 1.1f;
+                translationY = endLocation[3] - startY - (endLocation[1] / 2) * 1.1f;
+            } else {
+                translationX = endLocation[2] - startX;
+                translationY = endLocation[3] - startY;
+            }
         } else {
             translationX = endLocation[2] - startX - endLocation[0];
             translationY = endLocation[3] - startY - endLocation[1];

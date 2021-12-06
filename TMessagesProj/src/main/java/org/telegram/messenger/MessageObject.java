@@ -4423,7 +4423,7 @@ public class MessageObject {
     }
 
     public boolean isReactions2() {
-        return !isUserOrEncrypted() && !DialogObject.isEncryptedDialog(messageOwner.dialog_id) && messageOwner.reactions != null && !messageOwner.reactions.results.isEmpty();
+        return !isUserOrEncrypted() && !DialogObject.isEncryptedDialog(messageOwner.dialog_id);
     }
 
     public ArrayList<Integer> reactionsWidths = new ArrayList<>();
@@ -4469,6 +4469,8 @@ public class MessageObject {
     }
 
     public void generateReactionsLayout(float maxWidth) {
+        if (!isReactions2()) { return; }
+        if (messageOwner.reactions == null) { return; }
         // STODO: Check if width changed or reactions
         reactionsWidths.clear();
         reactionsLines.clear();
@@ -4477,7 +4479,6 @@ public class MessageObject {
         reactionsTranslationsY.clear();
         reactionsImage.clear();
         reactionsHeight = 0;
-        if (messageOwner.reactions == null) { return; }
 
         Paint textPaint = new Paint();
         textPaint.setTextSize(AndroidUtilities.dp(13));
